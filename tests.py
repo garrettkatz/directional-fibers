@@ -30,11 +30,14 @@ def test_update_tangent():
     solve_tolerance = 10**-18    
     x, _ = df.refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
     
-    f, Df = fDf(x[:N,:])
+    _, Df = fDf(x[:N,:])
     DF = np.concatenate((Df, -c), axis=1)
     _,_,z = np.linalg.svd(DF)
     z = z[[N],:].T
-            
+    
+    x = x + 0.001*z
+    _, Df = fDf(x[:N,:])
+    DF = np.concatenate((Df, -c), axis=1)
     z_new = df.update_tangent(DF, z)
     
     print("Test update tangent:")
