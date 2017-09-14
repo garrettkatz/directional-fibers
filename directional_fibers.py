@@ -1,15 +1,49 @@
-from utils import *
+import numpy as np
+import utils as ut
 import itertools as it
 
 def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
+    residuals = []
     for i in it.count(0):
         f, Df = fDf(x[:-1,:])
         F = f - x[-1]*c
+        residuals.append(np.fabs(F).max())
         if i == max_solve_iterations: break
         if (np.fabs(F) < solve_tolerance).all(): break
         DF = np.concatenate((Df, -c), axis=1)
-        x = x - mldivide(DF, F)
-    return x, F, i
+        x = x - ut.mldivide(DF, F)
+    return x, residuals
+
+def update_tangent(DF, z):
+    """
+    Calculate the new tangent vector after the numerical step
+    DF should be the Jacobian of F at the new point after the step (N by N+1 numpy.array)
+    z should be the previous tangent vector before the step (N+1 by 1 numpy.array)
+    returns z_new, the tangent vector after the step (N+1 by 1 numpy.array)
+    """
+    N = DF.shape[0]
+    DG = np.concatenate((DF,z.T), axis=0)
+    z_new = ut.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
+    z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
+    return z_new
+
+def minimum_singular_value(A):
+    """
+    Returns the minimum singular value of numpy.array A
+    """
+    # return np.linalg.norm(A, ord=-2)
+    return np.linalg.svd(A, compute_uv=0)[-1] # called deep within a code branch of np.linalg.norm
+
+def compute_step_size(mu, DF, z):
+    """
+    Compute a step size at current traversal point
+    mu should satisfy ||Df(x) - Df(y)|| <= mu * ||x - y||
+    DF should be the Jacobian of F (an N by N+1 numpy.array)
+    z should be the tangent vector (an N+1 by 1 numpy.array)
+    """
+    DG = np.concatenate((DF, z.T), axis=0)
+    sv_min = minimum_singular_value(DG)
+    return sv_min / (2. * mu)
 
 def traverse_fiber(
     fDf,
@@ -57,12 +91,10 @@ def traverse_fiber(
 
     # Set defaults
     if v is not None: N = v.shape[0]
-    if c is not None: N = c.shape[0]
-    
+    if c is not None: N = c.shape[0]    
     if c is None:
         c = np.random.randn(N,1)
-        c = c/np.sqrt((c**2).sum())
-    
+        c = c/np.sqrt((c**2).sum())    
     x = np.zeros((N+1,1))
     if v is not None: 
         x[:N,:] = v
@@ -71,7 +103,7 @@ def traverse_fiber(
         x[N,:] = a[a.isfinite()].mean()
 
     # Drive initial va to curve
-    x = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
+    x, _ = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
     
     # Initialize fiber tangent
     f, Df = fDf(x[:N,:])
@@ -79,21 +111,23 @@ def traverse_fiber(
     _,_,z = np.linalg.svd(DF)
     z = z[[N],:].T
 
-    return x, z
-
     # Traverse
     X = []
     step_sizes = []
     s_mins = []
     residuals = []
     cloop_distance = np.nan
-    # for step in it.count(0):
+    for step in it.count(0):
 
-        # Get Df
+        # Update DF
+        f, Df = fDf(x[:N,:])
+        DF = np.concatenate((Df, -c), axis=1)
         
-        # Get z_new with solve (for Dg)
+        # Update tangent
+        z_new = update_tangent(DF, z)
 
         # Get step size from Df and z_new (Dg)
+        step_size = compute_step_size(mu, DF, z)
 
         # Get va_new with take step (needs f and Df (g and Dg) on every iter)
         
