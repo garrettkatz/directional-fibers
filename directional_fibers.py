@@ -4,14 +4,14 @@ import itertools as it
 
 def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
     residuals = []
-    for i in it.count(0):
+    for i in it.count(1):
         f, Df = fDf(x[:-1,:])
         F = f - x[-1]*c
         residuals.append(np.fabs(F).max())
-        if i == max_solve_iterations: break
         if (np.fabs(F) < solve_tolerance).all(): break
         DF = np.concatenate((Df, -c), axis=1)
         x = x - ut.mldivide(DF, F)
+        if i == max_solve_iterations: break
     return x, residuals
 
 def update_tangent(DF, z):
