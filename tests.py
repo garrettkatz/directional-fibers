@@ -13,7 +13,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         self.c = np.random.randn(self.N,1)
         self.c = self.c/np.linalg.norm(self.c)
         self.max_solve_iterations = 2**5
-        self.solve_tolerance = 10**-18        
+        self.solve_tolerance = 10**-18
 
     def test_initial(self):
         x, residuals = df.refine_initial(
