@@ -14,7 +14,10 @@ class DirectionalFiberTestCase(ut.TestCase):
         self.c = self.c/np.linalg.norm(self.c)
         self.max_solve_iterations = 2**5
         self.solve_tolerance = 10**-18
+        self.mu = 1
+        self.max_step_size = 1
 
+    # @ut.skip("")
     def test_initial(self):
         x, residuals = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)
@@ -27,6 +30,7 @@ class DirectionalFiberTestCase(ut.TestCase):
             (residuals[-1] < self.solve_tolerance) or
             (len(residuals) <= self.max_solve_iterations))
 
+    # @ut.skip("")
     def test_update_tangent(self):
         x, _ = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -46,6 +50,45 @@ class DirectionalFiberTestCase(ut.TestCase):
         print(z.T)
         print(z_new.T)
         self.assertTrue(z.T.dot(z_new) > 0)
+
+    # @ut.skip("")
+    def test_compute_step_size(self):
+        x, _ = df.refine_initial(
+            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
+        _, Df = self.fDf(x[:self.N,:])
+        DF = np.concatenate((Df, -self.c), axis=1)
+        _,_,z = np.linalg.svd(DF)
+        z = z[[self.N],:].T
+
+        step_size = df.compute_step_size(self.mu, DF, z)
+        print("")
+        print("step_size")
+        print(step_size) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
+
+    # @ut.skip("")
+    def test_take_step(self):
+        x, _ = df.refine_initial(
+            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
+        _, Df = self.fDf(x[:self.N,:])
+        DF = np.concatenate((Df, -self.c), axis=1)
+        _,_,z = np.linalg.svd(DF)
+        z = z[[self.N],:].T
+        
+        step_size = df.compute_step_size(self.mu, DF, z)
+        if self.max_step_size is not None: step_size = min(step_size, self.max_step_size)
+
+        x_new, residuals = df.take_step(self.fDf, self.c, z, x, step_size, self.max_solve_iterations, self.solve_tolerance)
+
+        print("")
+        print("x, x_new, residuals, num iters")
+        print(x.T)
+        print(x_new.T)
+        print(residuals)
+        print(len(residuals))
+        self.assertTrue(z.T.dot(x_new-x) > 0)
+        self.assertTrue(
+            (len(residuals) <= self.max_solve_iterations) or
+            (residuals[-1] < self.solve_tolerance))
 
 def main():
     test_suite = ut.TestLoader().loadTestsFromTestCase(DirectionalFiberTestCase)

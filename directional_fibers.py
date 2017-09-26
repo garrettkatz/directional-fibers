@@ -1,5 +1,5 @@
 import numpy as np
-import utils as ut
+import numerical_utilities as nu
 import itertools as it
 
 def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
@@ -10,7 +10,7 @@ def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
         residuals.append(np.fabs(F).max())
         if (np.fabs(F) < solve_tolerance).all(): break
         DF = np.concatenate((Df, -c), axis=1)
-        x = x - ut.mldivide(DF, F)
+        x = x - nu.mldivide(DF, F)
         if i == max_solve_iterations: break
     return x, residuals
 
@@ -23,7 +23,7 @@ def update_tangent(DF, z):
     """
     N = DF.shape[0]
     DG = np.concatenate((DF,z.T), axis=0)
-    z_new = ut.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
+    z_new = nu.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
     z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
@@ -44,6 +44,25 @@ def compute_step_size(mu, DF, z):
     DG = np.concatenate((DF, z.T), axis=0)
     sv_min = minimum_singular_value(DG)
     return sv_min / (2. * mu)
+
+def take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance):
+    N = c.shape[0]
+    x0 = x
+    x = x + z*step_size # fast first step
+    delta_g = np.zeros((N+1,1))
+    residuals = []
+    for iteration in it.count(1):
+        f, Df = fDf(x[:N,:])
+        F = f - x[N,:]*c
+        delta_g[:N,:] = -F
+        delta_g[N,:] = step_size - z.T.dot(x - x0)
+        residuals.append(np.fabs(delta_g).max())
+        if iteration >= max_solve_iterations: break
+        if (np.fabs(delta_g) < solve_tolerance).all(): break
+        DF = np.concatenate((Df, -c), axis=1)
+        Dg = np.concatenate((DF, z.T), axis=0)
+        x = x + nu.solve(Dg, delta_g)
+    return x, residuals
 
 def traverse_fiber(
     fDf,
@@ -102,7 +121,7 @@ def traverse_fiber(
         a = f/c
         x[N,:] = a[a.isfinite()].mean()
 
-    # Drive initial va to curve
+    # Drive initial va to fiber in case of residual error
     x, _ = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
     
     # Initialize fiber tangent
@@ -124,15 +143,15 @@ def traverse_fiber(
         DF = np.concatenate((Df, -c), axis=1)
         
         # Update tangent
-        z_new = update_tangent(DF, z)
+        z = update_tangent(DF, z)
 
         # Get step size from Df and z_new (Dg)
         step_size = compute_step_size(mu, DF, z)
+        if max_step_size is not None: step_size = min(step_size, max_step_size)
 
-        # Get va_new with take step (needs f and Df (g and Dg) on every iter)
+        # Update x
+        x, _ = take_step(fDF, c, z, x, step_size, max_solve_iterations, solve_tolerance)
         
-        # Update va, z to va_new and z_new
-
         # Check local |alpha| minimum OR alpha sign change (neither implies the other in discretization)
 
         # Check for path termination criteria (asymptote in rnn)

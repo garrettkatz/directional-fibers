@@ -1,1 +1,3 @@
 repetitions in tests with multiple W
+"performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
+find a home for hardwrite (not numerical)
