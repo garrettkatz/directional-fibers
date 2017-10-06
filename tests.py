@@ -3,11 +3,12 @@ import unittest as ut
 import numpy as np
 import directional_fibers as df
 import rnn
+import matplotlib.pyplot as plt
 
 class DirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
         self.N = 2
-        self.W = np.random.randn(self.N, self.N)
+        self.W = np.eye(self.N,self.N) + 0.1*np.random.randn(self.N, self.N)
         # self.fDf = lambda v: (
         #     (np.tanh(self.W.dot(v)) - v,
         #     (1-np.tanh(self.W.dot(v))**2)*self.W - np.eye(self.N)))
@@ -20,7 +21,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         self.solve_tolerance = 10**-18
         self.max_step_size = 1
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_initial(self):
         x, residuals = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)
@@ -33,7 +34,7 @@ class DirectionalFiberTestCase(ut.TestCase):
             (residuals[-1] < self.solve_tolerance) or
             (len(residuals) <= self.max_solve_iterations))
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_update_tangent(self):
         x, _ = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -54,7 +55,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         print(z_new.T)
         self.assertTrue(z.T.dot(z_new) > 0)
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_compute_step_size(self):
         x, _ = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -68,7 +69,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         print("step_size, sv_min")
         print(step_size, sv_min) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_take_step(self):
         x, _ = df.refine_initial(
             self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -93,7 +94,7 @@ class DirectionalFiberTestCase(ut.TestCase):
             (len(residuals) <= self.max_solve_iterations) or
             (residuals[-1] < self.solve_tolerance))
     
-    # @ut.skip("")
+    @ut.skip("")
     def test_early_term(self):
         print("")
         for max_traverse_steps in range(5):
@@ -124,6 +125,21 @@ class DirectionalFiberTestCase(ut.TestCase):
         print("start, run, end")
         print(start_time, run_time, end_time)
         self.assertTrue(end_time > start_time + run_time and end_time < start_time + run_time + 1)
+
+    def test_traverse(self):
+        result = df.traverse_fiber(
+            self.fDf,
+            self.compute_step_size,
+            v=self.x[:self.N,:],
+            c=self.c,
+            max_traverse_steps=100,
+            max_solve_iterations=self.max_solve_iterations,
+            solve_tolerance=self.solve_tolerance,
+            )
+        X = np.concatenate(result["X"], axis=1)
+        X = np.concatenate((-np.fliplr(X), X), axis=1)
+        plt.plot(X[0,:],X[1,:],'b.')
+        plt.show()
 
 def main():
     test_suite = ut.TestLoader().loadTestsFromTestCase(DirectionalFiberTestCase)
