@@ -1,3 +1,4 @@
 repetitions in tests with multiple W
 "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
+forward error for convergence criteria
 find a home for hardwrite (not numerical)

@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import numerical_utilities as nu
 import itertools as it
@@ -14,17 +15,22 @@ def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
         if i == max_solve_iterations: break
     return x, residuals
 
-def update_tangent(DF, z):
+def compute_tangent(DF, z=None):
     """
-    Calculate the new tangent vector after the numerical step
+    Compute the tangent vector to the directional fiber
     DF should be the Jacobian of F at the new point after the step (N by N+1 numpy.array)
-    z should be the previous tangent vector before the step (N+1 by 1 numpy.array)
+    z should be None or the previous tangent vector before the step (N+1 by 1 numpy.array)
     returns z_new, the tangent vector after the step (N+1 by 1 numpy.array)
+    if z is not None, the sign of z_new is selected for positive dot product with z
     """
     N = DF.shape[0]
-    DG = np.concatenate((DF,z.T), axis=0)
-    z_new = nu.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
-    z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
+    if z is None:
+        _,_,z_new = np.linalg.svd(DF)
+        z_new = z_new[[N],:].T
+    else:
+        DG = np.concatenate((DF,z.T), axis=0)
+        z_new = nu.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
+        z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
 def minimum_singular_value(A):
@@ -43,7 +49,7 @@ def compute_step_size(mu, DF, z):
     """
     DG = np.concatenate((DF, z.T), axis=0)
     sv_min = minimum_singular_value(DG)
-    return sv_min / (2. * mu)
+    return sv_min / (2. * mu), sv_min
 
 def take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance):
     N = c.shape[0]
@@ -81,6 +87,7 @@ def traverse_fiber(
 
     """
     Traverses a directional fiber.
+    All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
     The user-provided function fDf(v) should return f(v), Df(v).
     mu should satisfy ||Df(x) - Df(y)|| <= mu * ||x - y||
     v is an approximate starting point for traveral (defaults to the origin).
@@ -95,17 +102,18 @@ def traverse_fiber(
     If provided, step sizes are truncated to max_step_size.
 
     Each step is computed with Newton's method.
+    Residual error is measured by the maximum norm of G.
     If provided, each step uses at most max_solve_iterations of Newton's method.
     If provided, each step terminates after the Newton residual is within solve_tolerance.
     At least one of max_solve_iterations and solve_tolerance should be provided.
 
     A dictionary with the following entries is returned:
-    "status": one of "Term", "Max steps", "Closed loop", "Timed out".
-    "X": X[:,n] is the n^{th} point along the fiber
-    "c": c is the direction vector that was used
+    "status": one of "Terminated", "Closed loop", "Max steps", "Timed out".
+    "X": X[n] is the n^{th} point along the fiber
+    "residuals": residuals[n] is the residual error after Newton's method at the n^{th} step
     "step_sizes": step_sizes[n] is the size used for the n^{th} step
-    "lambdas": lambdas[n] is the minimum singular value of Dg at the n^{th} step
-    "residuals": residuals[n] is the residual error of Newton's method at the n^{th} step
+    "sv_mins": sv_mins[n] is the minimum singular value of Dg at the n^{th} step
+    "c": c is the direction vector that was used
     """
 
     # Set defaults
@@ -119,45 +127,68 @@ def traverse_fiber(
         x[:N,:] = v
         f, _ = fDf(x[:N,:])
         a = f/c
-        x[N,:] = a[a.isfinite()].mean()
+        x[N,:] = a[np.isfinite(a)].mean()
 
     # Drive initial va to fiber in case of residual error
-    x, _ = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
+    x, initial_residuals = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
     
     # Initialize fiber tangent
     f, Df = fDf(x[:N,:])
     DF = np.concatenate((Df, -c), axis=1)
-    _,_,z = np.linalg.svd(DF)
-    z = z[[N],:].T
+    z = compute_tangent(DF)
+
+    # Initialize outputs
+    status = "Traversing"
+    X = [x]
+    residuals = [initial_residuals[-1]]
+    step_sizes = []
+    sv_mins = []
 
     # Traverse
-    X = []
-    step_sizes = []
-    s_mins = []
-    residuals = []
-    cloop_distance = np.nan
     for step in it.count(0):
+
+        # Check for early termination criteria
+        if max_traverse_steps is not None and step >= max_traverse_steps:
+            status = "Max steps"
+            break
+        if stop_time is not None and time.clock() >= stop_time:
+            status = "Timed out"
+            break
+        # Check custom termination criteria
+        if term is not None and term(x):
+            status = "Terminated"
+            break            
+        # Check for closed loop
+        if len(X) > 2 and np.fabs(X[-1]-X[0]).max() < np.fabs(X[2]-X[0]).max():
+            status = "Closed loop"
+            break
 
         # Update DF
         f, Df = fDf(x[:N,:])
         DF = np.concatenate((Df, -c), axis=1)
         
         # Update tangent
-        z = update_tangent(DF, z)
+        z = compute_tangent(DF, z)
 
         # Get step size from Df and z_new (Dg)
-        step_size = compute_step_size(mu, DF, z)
+        step_size, sv_min = compute_step_size(mu, DF, z)
         if max_step_size is not None: step_size = min(step_size, max_step_size)
-
+       
         # Update x
-        x, _ = take_step(fDF, c, z, x, step_size, max_solve_iterations, solve_tolerance)
+        x, step_residuals = take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance)
+
+        # Store progress
+        X.append(x)
+        residuals.append(step_residuals[-1])
+        step_sizes.append(step_size)
+        sv_mins.append(sv_min)
         
-        # Check local |alpha| minimum OR alpha sign change (neither implies the other in discretization)
-
-        # Check for path termination criteria (asymptote in rnn)
-            
-        # Check for closed loop
-
-        # Early termination criteria
-
-        # final output
+    # final output
+    return {
+        "status":status,
+        "X":X,
+        "residuals":residuals,
+        "step_sizes":step_sizes,
+        "sv_mins":sv_mins,
+        "c":c,
+    }

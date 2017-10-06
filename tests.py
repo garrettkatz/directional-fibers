@@ -1,3 +1,4 @@
+import time
 import unittest as ut
 import numpy as np
 import directional_fibers as df
@@ -42,7 +43,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         x = x + 0.001*z
         _, Df = self.fDf(x[:self.N,:])
         DF = np.concatenate((Df, -self.c), axis=1)
-        z_new = df.update_tangent(DF, z)
+        z_new = df.compute_tangent(DF, z)
         
         # print("Test update tangent:")
         print("")
@@ -60,10 +61,10 @@ class DirectionalFiberTestCase(ut.TestCase):
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
 
-        step_size = df.compute_step_size(self.mu, DF, z)
+        step_size, sv_min = df.compute_step_size(self.mu, DF, z)
         print("")
-        print("step_size")
-        print(step_size) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
+        print("step_size, sv_min")
+        print(step_size, sv_min) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
 
     # @ut.skip("")
     def test_take_step(self):
@@ -89,6 +90,38 @@ class DirectionalFiberTestCase(ut.TestCase):
         self.assertTrue(
             (len(residuals) <= self.max_solve_iterations) or
             (residuals[-1] < self.solve_tolerance))
+    
+    # @ut.skip("")
+    def test_early_term(self):
+        print("")
+        for max_traverse_steps in range(5):
+            result = df.traverse_fiber(
+                self.fDf,
+                self.mu,
+                v=self.x[:self.N,:],
+                c=self.c,
+                max_traverse_steps=max_traverse_steps,
+                max_solve_iterations=self.max_solve_iterations,
+                solve_tolerance=self.solve_tolerance,
+                )
+            print("max, len(X):")
+            print(max_traverse_steps, len(result["X"]))
+            self.assertTrue(len(result["X"]) <= max_traverse_steps+1)
+        run_time = 2
+        start_time = time.clock()
+        result = df.traverse_fiber(
+            self.fDf,
+            self.mu,
+            v=self.x[:self.N,:],
+            c=self.c,
+            stop_time=start_time + run_time,
+            max_solve_iterations=self.max_solve_iterations,
+            solve_tolerance=self.solve_tolerance,
+            )
+        end_time = time.clock()
+        print("start, run, end")
+        print(start_time, run_time, end_time)
+        self.assertTrue(end_time > start_time + run_time and end_time < start_time + run_time + 1)
 
 def main():
     test_suite = ut.TestLoader().loadTestsFromTestCase(DirectionalFiberTestCase)
