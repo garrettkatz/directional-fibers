@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import scipy.linalg as spl
 
 def hardwrite(f,data):
     """
@@ -42,3 +43,10 @@ def solve(A, B):
     else:
         return np.linalg.linalg._umath_linalg.solve(A, B, signature=signature, extobj=extobj)
 
+def minimum_singular_value(A):
+    """
+    Returns the minimum singular value of numpy.array A
+    """
+    # return np.linalg.norm(A, ord=-2)
+    # return np.linalg.svd(A, compute_uv=0)[-1] # called deep within a code branch of np.linalg.norm
+    return np.sqrt(spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0]) # slightly faster

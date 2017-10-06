@@ -2,20 +2,22 @@ import time
 import unittest as ut
 import numpy as np
 import directional_fibers as df
+import rnn
 
 class DirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
         self.N = 2
-        self.W = np.random.randn(self.N)
-        self.fDf = lambda v: (
-            (np.tanh(self.W.dot(v)) - v,
-            (1-np.tanh(self.W.dot(v))**2)*self.W - np.eye(self.N)))
+        self.W = np.random.randn(self.N, self.N)
+        # self.fDf = lambda v: (
+        #     (np.tanh(self.W.dot(v)) - v,
+        #     (1-np.tanh(self.W.dot(v))**2)*self.W - np.eye(self.N)))
+        self.fDf = rnn.fDf_factory(self.W)
+        self.compute_step_size = rnn.compute_step_size_factory(self.W)
         self.x = 0.01*np.random.randn(self.N+1,1)
         self.c = np.random.randn(self.N,1)
         self.c = self.c/np.linalg.norm(self.c)
         self.max_solve_iterations = 2**5
         self.solve_tolerance = 10**-18
-        self.mu = 1
         self.max_step_size = 1
 
     # @ut.skip("")
@@ -61,7 +63,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
 
-        step_size, sv_min = df.compute_step_size(self.mu, DF, z)
+        step_size, sv_min = self.compute_step_size(x, DF, z)
         print("")
         print("step_size, sv_min")
         print(step_size, sv_min) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
@@ -75,7 +77,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
         
-        step_size = df.compute_step_size(self.mu, DF, z)
+        step_size = self.compute_step_size(x, DF, z)
         if self.max_step_size is not None: step_size = min(step_size, self.max_step_size)
 
         x_new, residuals = df.take_step(self.fDf, self.c, z, x, step_size, self.max_solve_iterations, self.solve_tolerance)
@@ -97,7 +99,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         for max_traverse_steps in range(5):
             result = df.traverse_fiber(
                 self.fDf,
-                self.mu,
+                self.compute_step_size,
                 v=self.x[:self.N,:],
                 c=self.c,
                 max_traverse_steps=max_traverse_steps,
@@ -111,7 +113,7 @@ class DirectionalFiberTestCase(ut.TestCase):
         start_time = time.clock()
         result = df.traverse_fiber(
             self.fDf,
-            self.mu,
+            self.compute_step_size,
             v=self.x[:self.N,:],
             c=self.c,
             stop_time=start_time + run_time,

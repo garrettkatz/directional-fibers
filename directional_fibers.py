@@ -33,24 +33,6 @@ def compute_tangent(DF, z=None):
         z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
-def minimum_singular_value(A):
-    """
-    Returns the minimum singular value of numpy.array A
-    """
-    # return np.linalg.norm(A, ord=-2)
-    return np.linalg.svd(A, compute_uv=0)[-1] # called deep within a code branch of np.linalg.norm
-
-def compute_step_size(mu, DF, z):
-    """
-    Compute a step size at current traversal point
-    mu should satisfy ||Df(x) - Df(y)|| <= mu * ||x - y||
-    DF should be the Jacobian of F (an N by N+1 numpy.array)
-    z should be the tangent vector (an N+1 by 1 numpy.array)
-    """
-    DG = np.concatenate((DF, z.T), axis=0)
-    sv_min = minimum_singular_value(DG)
-    return sv_min / (2. * mu), sv_min
-
 def take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance):
     N = c.shape[0]
     x0 = x
@@ -72,7 +54,7 @@ def take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance):
 
 def traverse_fiber(
     fDf,
-    mu,
+    compute_step_size,
     v=None,
     c=None,
     N=None,
@@ -89,7 +71,9 @@ def traverse_fiber(
     Traverses a directional fiber.
     All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
     The user-provided function fDf(v) should return f(v), Df(v).
-    mu should satisfy ||Df(x) - Df(y)|| <= mu * ||x - y||
+    The user-provided function compute_step_size(x, DF, z) should return:
+        step_size: step size at point x along fiber with derivative DF and tangent z
+        sv_min: minimum singular value of DG
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
     N is the dimensionality of the dynamical system (defaults to shape of v or c).
@@ -171,7 +155,7 @@ def traverse_fiber(
         z = compute_tangent(DF, z)
 
         # Get step size from Df and z_new (Dg)
-        step_size, sv_min = compute_step_size(mu, DF, z)
+        step_size, sv_min = compute_step_size(x, DF, z)
         if max_step_size is not None: step_size = min(step_size, max_step_size)
        
         # Update x
