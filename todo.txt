@@ -4,3 +4,4 @@ forward error for convergence criteria
 find a home for hardwrite (not numerical)
 check fxpt locations of traversal
 Users sub-class DynamicalSystem object? with fDf, compute_step_size, etc
+svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
