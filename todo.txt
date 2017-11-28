@@ -1,3 +1,15 @@
+establish usage first, then design
+
+t = Traverser(f, Df, N, forward_error, unique_fxpts, calc_step_size, term_criterion)
+t.reset(x0, c, force=False) # new traversal, can destory pre-existing, raise unless forced
+t.traverse(x0, c, max_steps/etc)
+t.get_status() # not started, traversing, success/fail, etc.
+fiber = t.get_fiber # whatever already traversed if any
+fxpts = t.extract_fxpts() # based on internal fiber
+
+system-dependent: f, Df, forward_error, unique fxpts, step size, term criterion
+system-independent: drive to curve (NR1), compute tangent, take step (NR2), refine fxpt in curve (NR3), refine fxpt (NR4), 
+
 repetitions in tests with multiple W
 "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
 forward error for convergence criteria
