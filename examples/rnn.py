@@ -16,11 +16,6 @@ def fDf_factory(W):
 
 # Constructs the compute_step_size function for a given W
 def compute_step_size_factory(W):
-    def compute_step_size():
-        pass
-
-# Constructs the compute_step_size function for a given invertible W
-def compute_step_size_factory(W):
     mu = np.sqrt(16./27.) * np.linalg.norm(W) * min(np.linalg.norm(W), np.sqrt((W*W).sum(axis=1)).max())
     def compute_step_size(x, DF, z):
         DG = np.concatenate((DF, z.T), axis=0)
