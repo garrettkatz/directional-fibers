@@ -23,3 +23,20 @@ def compute_step_size_factory(W):
         step_size = sv_min / (4. * mu)
         return step_size, sv_min
     return compute_step_size
+
+solution = fxpts.fiber_solver(f[], Df[], c, step_size[], terminate[], unique_fxpts[], is_fixed[], settings...)
+solution.fiber
+solution.fxpts
+solution.status
+etc
+
+if you only need the fiber:
+solution = dfib.traverse_fiber(f[], Df[], c, step_size[], terminate[], settings...)
+solution.X (fiber)
+solution.L (lambda mins)
+solution.T (step sizes)
+solution.Z, .F, etc
+more descriptive names
+
+fxpts.random_solver (baseline)
+fxpts.refine_fxpt
