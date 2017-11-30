@@ -1,21 +1,3 @@
-establish usage first, then design
-
-t = Traverser(f[v], Df[v], c, N, calc_step_size[x,c,z], term_criterion[x], settings)
-t.get_x/z/c/step_size/svd_mins/f(slice)
-t.reset(x0, c, force=False) # new traversal, can destory pre-existing, raise unless forced
-t.traverse(x0, c, max_steps/etc)
-t.get_status() # not started, traversing, success/fail, etc.
-fiber = t.get_fiber # whatever already traversed if any
-
-FixedPointExtractor(is_fixed[v], identical_fxpts[v1,v2]
-fxpts = f.extract_fxpts(t) # based on internal fiber traversal, returns mini-traversers?
-
-system-dependent: f, Df, forward_error, unique fxpts, step size, term criterion
-system-independent: drive to curve (NR1), compute tangent, take step (NR2), z new, refine fxpt in curve (NR3), refine fxpt (NR4), 
-settings:
-on-the-curve tolerance, number of NR steps for each NR scenario, number of traverse steps, max step size
-flags: whether to calc svd at every point
-
 refine within fiber has to properly account for magnitude, not raw min?
 does magnitude of alpha (or alpha') relate to svd (for global bound)?
 repetitions in tests with multiple W
@@ -25,3 +7,33 @@ find a home for hardwrite (not numerical)
 check fxpt locations of traversal
 Users sub-class DynamicalSystem object? with fDf, compute_step_size, etc
 svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
+establish usage first, then design
+
+solution = fxpts.fiber_solver(f[], Df[], c, step_size[], terminate[], unique_fxpts[], is_fixed[], settings...)
+solution.fiber
+solution.fxpts
+solution.status
+etc
+
+if you only need the fiber:
+solution = dfib.traverse_fiber(f[], Df[], v, c, step_size[], terminate[], settings...)
+solution.X (fiber)
+solution.L (lambda mins)
+solution.T (step sizes)
+solution.Z, .F, etc
+more descriptive names
+
+fxpts.random_solver (baseline)
+fxpts.refine_fxpt
+
+system-dependent: f, Df, forward_error, unique fxpts, step size, term criterion
+system-independent: drive to curve (NR1), compute tangent, take step (NR2), z new, refine fxpt in curve (NR3), refine fxpt (NR4), 
+settings:
+on-the-curve tolerance, number of NR steps for each NR scenario, number of traverse steps, max step size
+flags: whether to calc svd at every point
+
+Trade-offs
+f, Df vs fDf:
+    fDf saves work
+    f, Df can do f on 2d array
+

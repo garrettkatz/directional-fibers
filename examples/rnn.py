@@ -14,6 +14,14 @@ def fDf_factory(W):
         return f, Df
     return fDf
 
+# Constructs the fDf function for a given W
+def f_factory(W):
+    return lambda v: np.tanh(W.dot(v)) - v
+    
+def Df_factory(W):
+    I = np.eye(W.shape[0])
+    return lambda v: (1-np.tanh(W.dot(v))**2)*W - I
+
 # Constructs the compute_step_size function for a given W
 def compute_step_size_factory(W):
     mu = np.sqrt(16./27.) * np.linalg.norm(W) * min(np.linalg.norm(W), np.sqrt((W*W).sum(axis=1)).max())
@@ -24,19 +32,3 @@ def compute_step_size_factory(W):
         return step_size, sv_min
     return compute_step_size
 
-solution = fxpts.fiber_solver(f[], Df[], c, step_size[], terminate[], unique_fxpts[], is_fixed[], settings...)
-solution.fiber
-solution.fxpts
-solution.status
-etc
-
-if you only need the fiber:
-solution = dfib.traverse_fiber(f[], Df[], c, step_size[], terminate[], settings...)
-solution.X (fiber)
-solution.L (lambda mins)
-solution.T (step sizes)
-solution.Z, .F, etc
-more descriptive names
-
-fxpts.random_solver (baseline)
-fxpts.refine_fxpt

@@ -3,14 +3,14 @@ import numpy as np
 import numerical_utilities as nu
 import itertools as it
 
-def refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance):
+def refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance):
     residuals = []
     for i in it.count(1):
-        f, Df = fDf(x[:-1,:])
-        F = f - x[-1]*c
+        v, a = x[:-1,:], x[-1]
+        F = f(v) - a*c
         residuals.append(np.fabs(F).max())
         if (np.fabs(F) < solve_tolerance).all(): break
-        DF = np.concatenate((Df, -c), axis=1)
+        DF = np.concatenate((Df(v), -c), axis=1)
         x = x - nu.mldivide(DF, F)
         if i == max_solve_iterations: break
     return x, residuals
@@ -33,32 +33,34 @@ def compute_tangent(DF, z=None):
         z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
-def take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance):
+def take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance):
     N = c.shape[0]
     x0 = x
     x = x + z*step_size # fast first step
     delta_g = np.zeros((N+1,1))
+    Dg = np.zeros((N+1,N+1))
+    Dg[:N,[N]] = -c
+    Dg[[N],:] = z.T
     residuals = []
     for iteration in it.count(1):
-        f, Df = fDf(x[:N,:])
-        F = f - x[N,:]*c
-        delta_g[:N,:] = -F
+        v, a = x[:-1,:], x[-1]
+        delta_g[:N,:] = -(f(v) - a*c)
         delta_g[N,:] = step_size - z.T.dot(x - x0)
         residuals.append(np.fabs(delta_g).max())
         if iteration >= max_solve_iterations: break
         if (np.fabs(delta_g) < solve_tolerance).all(): break
-        DF = np.concatenate((Df, -c), axis=1)
-        Dg = np.concatenate((DF, z.T), axis=0)
+        Dg[:N,:N] = Df(v)
         x = x + nu.solve(Dg, delta_g)
     return x, residuals
 
 def traverse_fiber(
-    fDf,
+    f,
+    Df,
     compute_step_size,
     v=None,
     c=None,
     N=None,
-    term=None,
+    terminate=None,
     logfile=None,
     stop_time = None,
     max_traverse_steps=None,
@@ -70,16 +72,16 @@ def traverse_fiber(
     """
     Traverses a directional fiber.
     All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
-    The user-provided function fDf(v) should return f(v), Df(v).
+    The user provides functions f(v), Df(v), where v is N x 1
     The user-provided function compute_step_size(x, DF, z) should return:
         step_size: step size at point x along fiber with derivative DF and tangent z
-        sv_min: minimum singular value of DG
+        step_data: output for any additional data that is saved for post-traversal analysis
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
     N is the dimensionality of the dynamical system (defaults to shape of v or c).
     At least one of v, c, and N should be provided.
     
-    If provided, the function term(x) should return True when x meets a custom termination criterion.
+    If provided, the function terminate(x) should return True when x meets a custom termination criterion.
     If provided, progress is written to the file object logfile.
     If provided, traversal terminates at the clock time stop_time.
     If provided, traversal terminates after max_traverse_steps.
@@ -96,7 +98,7 @@ def traverse_fiber(
     "X": X[n] is the n^{th} point along the fiber
     "residuals": residuals[n] is the residual error after Newton's method at the n^{th} step
     "step_sizes": step_sizes[n] is the size used for the n^{th} step
-    "sv_mins": sv_mins[n] is the minimum singular value of Dg at the n^{th} step
+    "step_datas": step_datas[n] is the step_data saved at the n^{th} step
     "c": c is the direction vector that was used
     """
 
@@ -107,18 +109,16 @@ def traverse_fiber(
         c = np.random.randn(N,1)
         c = c/np.sqrt((c**2).sum())    
     x = np.zeros((N+1,1))
-    if v is not None: 
+    if v is not None:
+        a = f(v)/c
         x[:N,:] = v
-        f, _ = fDf(x[:N,:])
-        a = f/c
         x[N,:] = a[np.isfinite(a)].mean()
 
     # Drive initial va to fiber in case of residual error
-    x, initial_residuals = refine_initial(fDf, x, c, max_solve_iterations, solve_tolerance)
+    x, initial_residuals = refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance)
     
     # Initialize fiber tangent
-    f, Df = fDf(x[:N,:])
-    DF = np.concatenate((Df, -c), axis=1)
+    DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
     z = compute_tangent(DF)
 
     # Initialize outputs
@@ -126,7 +126,7 @@ def traverse_fiber(
     X = [x]
     residuals = [initial_residuals[-1]]
     step_sizes = []
-    sv_mins = []
+    step_datas = []
 
     # Traverse
     for step in it.count(0):
@@ -139,7 +139,7 @@ def traverse_fiber(
             status = "Timed out"
             break
         # Check custom termination criteria
-        if term is not None and term(x):
+        if terminate is not None and terminate(x):
             status = "Terminated"
             break            
         # Check for closed loop
@@ -148,24 +148,24 @@ def traverse_fiber(
             break
 
         # Update DF
-        f, Df = fDf(x[:N,:])
-        DF = np.concatenate((Df, -c), axis=1)
+        DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
         
         # Update tangent
         z = compute_tangent(DF, z)
 
-        # Get step size from Df and z_new (Dg)
-        step_size, sv_min = compute_step_size(x, DF, z)
-        if max_step_size is not None: step_size = min(step_size, max_step_size)
+        # Get step size
+        step_size, step_data = compute_step_size(x, DF, z)
+        if max_step_size is not None:
+            step_size = np.sign(step_size)*min(np.fabs(step_size), max_step_size)
        
         # Update x
-        x, step_residuals = take_step(fDf, c, z, x, step_size, max_solve_iterations, solve_tolerance)
+        x, step_residuals = take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance)
 
         # Store progress
         X.append(x)
         residuals.append(step_residuals[-1])
         step_sizes.append(step_size)
-        sv_mins.append(sv_min)
+        step_datas.append(step_data)
         
     # final output
     return {
@@ -173,6 +173,6 @@ def traverse_fiber(
         "X":X,
         "residuals":residuals,
         "step_sizes":step_sizes,
-        "sv_mins":sv_mins,
+        "step_datas":step_datas,
         "c":c,
     }

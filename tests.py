@@ -2,17 +2,16 @@ import time
 import unittest as ut
 import numpy as np
 import directional_fibers as df
-import rnn
+import examples.rnn as rnn
 import matplotlib.pyplot as plt
+import cProfile as cp
 
-class DirectionalFiberTestCase(ut.TestCase):
+class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
         self.N = 2
-        self.W = np.eye(self.N,self.N) + 0.1*np.random.randn(self.N, self.N)
-        # self.fDf = lambda v: (
-        #     (np.tanh(self.W.dot(v)) - v,
-        #     (1-np.tanh(self.W.dot(v))**2)*self.W - np.eye(self.N)))
-        self.fDf = rnn.fDf_factory(self.W)
+        self.W = 1.25*np.eye(self.N,self.N) + 0.1*np.random.randn(self.N, self.N)
+        self.f = rnn.f_factory(self.W)
+        self.Df = rnn.Df_factory(self.W)
         self.compute_step_size = rnn.compute_step_size_factory(self.W)
         self.x = 0.01*np.random.randn(self.N+1,1)
         self.c = np.random.randn(self.N,1)
@@ -24,7 +23,7 @@ class DirectionalFiberTestCase(ut.TestCase):
     @ut.skip("")
     def test_initial(self):
         x, residuals = df.refine_initial(
-            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)
+            self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)
         # print("Test initial:")
         print("")
         print("x, residuals")
@@ -37,15 +36,13 @@ class DirectionalFiberTestCase(ut.TestCase):
     @ut.skip("")
     def test_update_tangent(self):
         x, _ = df.refine_initial(
-            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
-        _, Df = self.fDf(x[:self.N,:])
-        DF = np.concatenate((Df, -self.c), axis=1)
+            self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
+        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
         
         x = x + 0.001*z
-        _, Df = self.fDf(x[:self.N,:])
-        DF = np.concatenate((Df, -self.c), axis=1)
+        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
         z_new = df.compute_tangent(DF, z)
         
         # print("Test update tangent:")
@@ -58,9 +55,8 @@ class DirectionalFiberTestCase(ut.TestCase):
     @ut.skip("")
     def test_compute_step_size(self):
         x, _ = df.refine_initial(
-            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
-        _, Df = self.fDf(x[:self.N,:])
-        DF = np.concatenate((Df, -self.c), axis=1)
+            self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
+        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
 
@@ -72,16 +68,16 @@ class DirectionalFiberTestCase(ut.TestCase):
     @ut.skip("")
     def test_take_step(self):
         x, _ = df.refine_initial(
-            self.fDf, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
-        _, Df = self.fDf(x[:self.N,:])
-        DF = np.concatenate((Df, -self.c), axis=1)
+            self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
+        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
         
         step_size = self.compute_step_size(x, DF, z)
         if self.max_step_size is not None: step_size = min(step_size, self.max_step_size)
 
-        x_new, residuals = df.take_step(self.fDf, self.c, z, x, step_size, self.max_solve_iterations, self.solve_tolerance)
+        x_new, residuals = df.take_step(
+            self.f, self.Df, self.c, z, x, step_size, self.max_solve_iterations, self.solve_tolerance)
 
         print("")
         print("x, x_new, residuals, num iters")
@@ -99,7 +95,8 @@ class DirectionalFiberTestCase(ut.TestCase):
         print("")
         for max_traverse_steps in range(5):
             result = df.traverse_fiber(
-                self.fDf,
+                self.f,
+                self.Df,
                 self.compute_step_size,
                 v=self.x[:self.N,:],
                 c=self.c,
@@ -113,7 +110,8 @@ class DirectionalFiberTestCase(ut.TestCase):
         run_time = 2
         start_time = time.clock()
         result = df.traverse_fiber(
-            self.fDf,
+            self.f,
+            self.Df,
             self.compute_step_size,
             v=self.x[:self.N,:],
             c=self.c,
@@ -128,22 +126,31 @@ class DirectionalFiberTestCase(ut.TestCase):
 
     def test_traverse(self):
         result = df.traverse_fiber(
-            self.fDf,
+            self.f,
+            self.Df,
             self.compute_step_size,
             v=self.x[:self.N,:],
             c=self.c,
-            max_traverse_steps=100,
+            max_traverse_steps=1000,
             max_solve_iterations=self.max_solve_iterations,
             solve_tolerance=self.solve_tolerance,
             )
         X = np.concatenate(result["X"], axis=1)
         X = np.concatenate((-np.fliplr(X), X), axis=1)
-        plt.plot(X[0,:],X[1,:],'b.')
+        V = X[:-1,:]
+        lm = 1.25
+        V = V[:, (np.fabs(V) < lm).all(axis=0)]
+        C = self.f(V)
+        plt.plot(V[0,:],V[1,:],'b.')
+        plt.gca().quiver(V[0,:],V[1,:],C[0,:],C[1,:],scale=.005,units='dots',width=2,headwidth=5)
+        plt.xlim((-lm,lm))
+        plt.ylim((-lm,lm))
         plt.show()
 
 def main():
-    test_suite = ut.TestLoader().loadTestsFromTestCase(DirectionalFiberTestCase)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(RNNDirectionalFiberTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
 if __name__ == "__main__":
+
     main()
