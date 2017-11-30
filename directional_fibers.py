@@ -33,10 +33,10 @@ def compute_tangent(DF, z=None):
         z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
-def take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance):
+def take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance):
     N = c.shape[0]
     x0 = x
-    x = x + z*step_size # fast first step
+    x = x + z*step_amount # fast first step
     delta_g = np.zeros((N+1,1))
     Dg = np.zeros((N+1,N+1))
     Dg[:N,[N]] = -c
@@ -45,7 +45,7 @@ def take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance):
     for iteration in it.count(1):
         v, a = x[:-1,:], x[-1]
         delta_g[:N,:] = -(f(v) - a*c)
-        delta_g[N,:] = step_size - z.T.dot(x - x0)
+        delta_g[N,:] = step_amount - z.T.dot(x - x0)
         residuals.append(np.fabs(delta_g).max())
         if iteration >= max_solve_iterations: break
         if (np.fabs(delta_g) < solve_tolerance).all(): break
@@ -56,7 +56,7 @@ def take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance):
 def traverse_fiber(
     f,
     Df,
-    compute_step_size,
+    compute_step_amount,
     v=None,
     c=None,
     N=None,
@@ -73,8 +73,8 @@ def traverse_fiber(
     Traverses a directional fiber.
     All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
     The user provides functions f(v), Df(v), where v is N x 1
-    The user-provided function compute_step_size(x, DF, z) should return:
-        step_size: step size at point x along fiber with derivative DF and tangent z
+    The user-provided function compute_step_amount(x, DF, z) should return:
+        step_amount: signed step size at point x along fiber with derivative DF and tangent z
         step_data: output for any additional data that is saved for post-traversal analysis
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
@@ -95,9 +95,9 @@ def traverse_fiber(
 
     A dictionary with the following entries is returned:
     "status": one of "Terminated", "Closed loop", "Max steps", "Timed out".
-    "X": X[n] is the n^{th} point along the fiber
+    "X": X[:,n] is the n^{th} point along the fiber
     "residuals": residuals[n] is the residual error after Newton's method at the n^{th} step
-    "step_sizes": step_sizes[n] is the size used for the n^{th} step
+    "step_amounts": step_amounts[n] is the size used for the n^{th} step
     "step_datas": step_datas[n] is the step_data saved at the n^{th} step
     "c": c is the direction vector that was used
     """
@@ -125,7 +125,7 @@ def traverse_fiber(
     status = "Traversing"
     X = [x]
     residuals = [initial_residuals[-1]]
-    step_sizes = []
+    step_amounts = []
     step_datas = []
 
     # Traverse
@@ -154,25 +154,25 @@ def traverse_fiber(
         z = compute_tangent(DF, z)
 
         # Get step size
-        step_size, step_data = compute_step_size(x, DF, z)
+        step_amount, step_data = compute_step_amount(x, DF, z)
         if max_step_size is not None:
-            step_size = np.sign(step_size)*min(np.fabs(step_size), max_step_size)
+            step_amount = np.sign(step_amount)*min(np.fabs(step_amount), max_step_size)
        
         # Update x
-        x, step_residuals = take_step(f, Df, c, z, x, step_size, max_solve_iterations, solve_tolerance)
+        x, step_residuals = take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance)
 
         # Store progress
         X.append(x)
         residuals.append(step_residuals[-1])
-        step_sizes.append(step_size)
+        step_amounts.append(step_amount)
         step_datas.append(step_data)
         
     # final output
     return {
-        "status":status,
-        "X":X,
-        "residuals":residuals,
-        "step_sizes":step_sizes,
-        "step_datas":step_datas,
-        "c":c,
+        "status": status,
+        "X": np.concatenate(X,axis=1),
+        "residuals": np.array(residuals),
+        "step_amounts": np.array(step_amounts),
+        "step_datas": step_datas,
+        "c": c,
     }

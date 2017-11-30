@@ -1,13 +1,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import directional_fibers as df
+import fixed_point_solvers as fx
 import examples.rnn as rnn
 
 N = 2
 W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
 f = rnn.f_factory(W)
 Df = rnn.Df_factory(W)
-compute_step_size = rnn.compute_step_size_factory(W)
+compute_step_amount = rnn.compute_step_amount_factory(W)
 x = 0.01*np.random.randn(N+1,1)
 c = np.random.randn(N,1)
 c = c/np.linalg.norm(c)
@@ -16,27 +17,53 @@ max_solve_iterations = 2**5
 solve_tolerance = 10**-18
 max_step_size = 1
 
-
-result = df.traverse_fiber(
+solution = fx.fiber_solver(
     f,
     Df,
-    compute_step_size,
+    compute_step_amount,
     v=x[:N,:],
     c=c,
     terminate=terminate,
+    max_step_size=0.01,
     max_traverse_steps=1000,
     max_solve_iterations=max_solve_iterations,
     solve_tolerance=solve_tolerance,
     )
-X = np.concatenate(result["X"], axis=1)
+    
+fiber = solution["Fiber"]
+X = fiber["X"]
 print("%d steps"%X.shape[1])
-X = np.concatenate((-np.fliplr(X), X), axis=1)
+# X = np.concatenate((-np.fliplr(X), X), axis=1)
 V = X[:-1,:]
-lm = 1.25
-V = V[:, (np.fabs(V) < lm).all(axis=0)]
 C = f(V)
-plt.plot(V[0,:],V[1,:],'b.')
-plt.gca().quiver(V[0,:],V[1,:],C[0,:],C[1,:],scale=.005,units='dots',width=2,headwidth=5)
+lm = 1.25
+lm_idx = (np.fabs(V) < lm).all(axis=0)
+# plt.subplot(1,2,1)
+plt.plot(V[0,:],V[1,:],'b-')
+plt.gca().quiver(V[0,lm_idx],V[1,lm_idx],C[0,lm_idx],C[1,lm_idx],scale=.005,units='dots',width=2,headwidth=5)
+
+
+for r in solution["Refinements"]:
+    plt.plot(r["X"][0,0], r["X"][1,0], 'go')
+
+V = solution["Fixed points"]
+plt.plot(V[0,:],V[1,:],'ro')
+
+for r in solution["Refinements"]:
+    plt.plot(r["X"][0,:], r["X"][1,:], 'g.-')
+
+
 plt.xlim((-lm,lm))
 plt.ylim((-lm,lm))
+
+# plt.subplot(1,2,2)
+# steps = fiber["steps"].cumsum()
+# a = X[-1,:-1]
+# plt.plot(steps, a, 'b-')
+# fixed_index = solution["Fixed index"][:-1]
+# plt.plot(steps[fixed_index], a[fixed_index], 'ro')
+# last = fixed_index[-2]
+# plt.xlim((0,steps[last]))
+# plt.ylim((a[:last].min(),a[:last].max()))
+
 plt.show()

@@ -21,21 +21,21 @@ def Df_factory(W):
     I = np.eye(W.shape[0])
     return lambda v: (1-np.tanh(W.dot(v))**2)*W - I
 
-def compute_step_size_factory(W):
+def compute_step_amount_factory(W):
     """
-    For a given weight matrix W, returns the function compute_step_size,
+    For a given weight matrix W, returns the function compute_step_amount,
     which returns a certified step size at a particular fiber point.
-    The function signature is compute_step_size(x, DF, z),
+    The function signature is compute_step_amount(x, DF, z),
     where x is the fiber point, the DF is the derivative of F(x), and z is the fiber tangent.
-    compute_step_size's second return value is the minimum singular value of Dg at x
+    compute_step_amount's second return value is the minimum singular value of Dg at x
     """    
     mu = np.sqrt(16./27.) * np.linalg.norm(W) * min(np.linalg.norm(W), np.sqrt((W*W).sum(axis=1)).max())
-    def compute_step_size(x, DF, z):
+    def compute_step_amount(x, DF, z):
         Dg = np.concatenate((DF, z.T), axis=0)
         sv_min = nu.minimum_singular_value(Dg)
-        step_size = sv_min / (4. * mu)
-        return step_size, sv_min
-    return compute_step_size
+        step_amount = sv_min / (4. * mu)
+        return step_amount, sv_min
+    return compute_step_amount
 
 def terminate_factory(W, c):
     """

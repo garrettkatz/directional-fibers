@@ -1,9 +1,11 @@
-refine within fiber has to properly account for magnitude, not raw min?
+unique fixed point post processing
+forward error for both fixed point and steps (fewer tolerances)
+log files
+    find a home for hardwrite (not numerical)
+    Logger class? hardwrite, and tracks indentation
 does magnitude of alpha (or alpha') relate to svd (for global bound)?
 repetitions in tests with multiple W
 "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
-forward error for convergence criteria
-find a home for hardwrite (not numerical)
 check fxpt locations of traversal
 Users sub-class DynamicalSystem object? with fDf, compute_step_size, etc
 svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
