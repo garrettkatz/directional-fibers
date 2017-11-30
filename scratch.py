@@ -11,6 +11,7 @@ compute_step_size = rnn.compute_step_size_factory(W)
 x = 0.01*np.random.randn(N+1,1)
 c = np.random.randn(N,1)
 c = c/np.linalg.norm(c)
+terminate = rnn.terminate_factory(W, c)
 max_solve_iterations = 2**5
 solve_tolerance = 10**-18
 max_step_size = 1
@@ -22,11 +23,13 @@ result = df.traverse_fiber(
     compute_step_size,
     v=x[:N,:],
     c=c,
+    terminate=terminate,
     max_traverse_steps=1000,
     max_solve_iterations=max_solve_iterations,
     solve_tolerance=solve_tolerance,
     )
 X = np.concatenate(result["X"], axis=1)
+print("%d steps"%X.shape[1])
 X = np.concatenate((-np.fliplr(X), X), axis=1)
 V = X[:-1,:]
 lm = 1.25
