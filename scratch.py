@@ -7,6 +7,7 @@ import examples.rnn as rnn
 N = 2
 W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
 f = rnn.f_factory(W)
+ef = rnn.ef_factory(W)
 Df = rnn.Df_factory(W)
 compute_step_amount = rnn.compute_step_amount_factory(W)
 x = 0.01*np.random.randn(N+1,1)
@@ -19,6 +20,7 @@ max_step_size = 1
 
 solution = fx.fiber_solver(
     f,
+    ef,
     Df,
     compute_step_amount,
     v=x[:N,:],
@@ -46,12 +48,11 @@ plt.gca().quiver(V[0,lm_idx],V[1,lm_idx],C[0,lm_idx],C[1,lm_idx],scale=.005,unit
 for r in solution["Refinements"]:
     plt.plot(r["X"][0,0], r["X"][1,0], 'go')
 
-V = solution["Fixed points"]
-plt.plot(V[0,:],V[1,:],'ro')
-
 for r in solution["Refinements"]:
     plt.plot(r["X"][0,:], r["X"][1,:], 'g.-')
 
+V = solution["Fixed points"]
+plt.plot(V[0,:],V[1,:],'ro')
 
 plt.xlim((-lm,lm))
 plt.ylim((-lm,lm))

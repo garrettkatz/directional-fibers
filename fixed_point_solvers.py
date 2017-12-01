@@ -1,8 +1,23 @@
 import numpy as np
 import directional_fibers as df
 
+def is_fixed(f, ef, v):
+    """
+    Decide whether a point is fixed.
+    f: dynamical difference function
+    ef: estimate of f forward-error
+    v: each column is a point to check.
+    returns (fixed, error) where
+        fixed is False if v is definitely not fixed
+        error is ef(v)
+    """
+    error = ef(v)
+    fixed = (np.fabs(f(v)) < error).all(axis=0)
+    return fixed, error
+
 def fiber_solver(
     f,
+    ef,
     Df,
     compute_step_amount,
     v=None,
@@ -68,6 +83,7 @@ def fiber_solver(
         step_amount = np.sign(refine_step_amount)*min(np.fabs(refine_step_amount), fiber_step_amount)
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
+    refine_terminate = lambda x: is_fixed(f, ef, x[:-1,:])[0] or terminate(x)
 
     # Run within-fiber Newton-Raphson at each candidate
     X = X[:, fixed_index]
@@ -80,7 +96,7 @@ def fiber_solver(
             compute_refine_step_amount,
             v=X[:-1,[i]].copy(),
             c=c,
-            terminate=terminate,
+            terminate=refine_terminate,
             logfile=logfile,
             stop_time=stop_time,
             max_traverse_steps=2**5, # only traverse enough for Newton-Raphson solve

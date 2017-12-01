@@ -20,7 +20,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         self.solve_tolerance = 10**-18
         self.max_step_size = 1
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_initial(self):
         x, residuals = df.refine_initial(
             self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)
@@ -33,7 +33,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             (residuals[-1] < self.solve_tolerance) or
             (len(residuals) <= self.max_solve_iterations))
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_update_tangent(self):
         x, _ = df.refine_initial(
             self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -52,7 +52,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         print(z_new.T)
         self.assertTrue(z.T.dot(z_new) > 0)
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_compute_step_amount_size(self):
         x, _ = df.refine_initial(
             self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -65,7 +65,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         print("step_size, sv_min")
         print(step_size, sv_min) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
 
-    # @ut.skip("")
+    @ut.skip("")
     def test_take_step(self):
         x, _ = df.refine_initial(
             self.f, self.Df, self.x, self.c, self.max_solve_iterations, self.solve_tolerance)        
@@ -90,7 +90,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             (len(residuals) <= self.max_solve_iterations) or
             (residuals[-1] < self.solve_tolerance))
     
-    # @ut.skip("")
+    @ut.skip("")
     def test_early_term(self):
         print("")
         for max_traverse_steps in range(5):
@@ -124,6 +124,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         print(start_time, run_time, end_time)
         self.assertTrue(end_time > start_time + run_time and end_time < start_time + run_time + 1)
 
+    @ut.skip("")
     def test_terminate(self):
         result = df.traverse_fiber(
             self.f,
@@ -149,7 +150,19 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             solve_tolerance=self.solve_tolerance,
             )
         self.assertTrue(result["status"] == "Terminated")
-    
+
+    @ut.skip("")
+    def test_ef(self):
+        ef = rnn.ef_factory(self.W)
+        print()
+        print("ef(0):")
+        print(ef(np.zeros((self.N,1))).max())
+        self.assertTrue(ef(np.zeros((self.N,1))).max() < 1**-100)
+        print("ef(1):")
+        print(ef(np.ones((self.N,1))).max())
+        self.assertTrue(ef(np.zeros((self.N,1))).max() < 1**-10)
+
+    @ut.skip("")
     def test_traverse_fiber(self):
         result = df.traverse_fiber(
             self.f,

@@ -5,7 +5,6 @@ Basic recurrent neural network model with activation rule:
 import numpy as np
 import numerical_utilities as nu
 
-# Constructs the fDf function for a given W
 def f_factory(W):
     """
     For a given weight matrix W, returns the function f,
@@ -20,6 +19,34 @@ def Df_factory(W):
     """
     I = np.eye(W.shape[0])
     return lambda v: (1-np.tanh(W.dot(v))**2)*W - I
+
+def ef_factory(W):
+    """
+    For a given weight matrix W, returns the function ef,
+    where ef(V) is an upper bound on the forward error of f(V).
+    Specifically, this should be true in every matrix entry:
+        |{f({V})} - f(V)| < {ef({V})},
+    where V is within machine precision of machine approximation {V}
+    and {f({V})}, {ef({V})} are the computed machine approximations of f({V}), ef({V}).
+    """
+    e_sigma = 5
+    W_abs = np.fabs(W)
+    def ef(V):
+        """
+        Estimates the numerical forward error in numpy.tanh(W.dot(V))-V.
+        Returns the numpy.array margin, where
+          margin[i,j] == the forward error bound on (numpy.tanh(W.dot(V))-V)[i,j].
+        """
+        N = V.shape[0]
+        V_eps = nu.eps(V)
+        tWV_eps = nu.eps(np.tanh(np.dot(W,V)))
+        margin = np.dot(W_abs, V_eps)
+        margin += N*nu.eps(np.dot(W_abs, np.fabs(V)))
+        margin += e_sigma * tWV_eps
+        margin += V_eps
+        margin += np.maximum(tWV_eps, V_eps)
+        return margin
+    return ef
 
 def compute_step_amount_factory(W):
     """
