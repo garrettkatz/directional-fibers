@@ -1,10 +1,48 @@
 import time
 import unittest as ut
 import numpy as np
+import numerical_utilities as nu
 import directional_fibers as df
+import fixed_point_solvers as fx
 import examples.rnn as rnn
 import matplotlib.pyplot as plt
-import cProfile as cp
+
+class UniqueFixedPointsTestCase(ut.TestCase):
+    def setUp(self):
+        self.N = 10
+        self.P = 100
+        self.K = 3
+        self.noise = 5
+        self.E = lambda V, u: (np.fabs(V - u) < self.noise*nu.eps(V)).all(axis=0)
+    def get_test_points(self):
+        """
+        Construct a set of 300 test points with at most 3 "unique" members.
+        returns a numpy.array V, where V[:,p] is the p^{th} point.
+        """
+        # make 100 copies of 3 distinct, random points
+        V = np.tile(np.random.rand(self.N,self.K),(1,self.P))
+        # shuffle randomly
+        V = V[:,np.random.permutation(self.K*self.P)]
+        # perterb by a small multiple of machine precision
+        V = V + np.floor(self.noise*np.random.rand(self.N,self.K*self.P))*nu.eps(V)
+        return V
+    def test_get_connected_components(self):
+        """
+        Sanity check for get_connected_components
+        """
+        V = self.get_test_points()
+        components = fx.get_connected_components(V, self.E)
+        self.assertTrue(len(np.unique(components)) <= self.K)
+    def test_get_unique_points(self):
+        """
+        Sanity check for get_unique_points
+        """
+        V = self.get_test_points()
+        U = fx.get_unique_points(V, self.E)
+        self.assertTrue(U.shape[1] <= self.K)
+        for p in range(V.shape[1]):
+            noise = (U - V[:,[p]]).max(axis=0)
+            self.assertTrue(noise.min() < (self.noise*nu.eps(V[:,p])).max())
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
@@ -182,6 +220,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
 
 def main():
     test_suite = ut.TestLoader().loadTestsFromTestCase(RNNDirectionalFiberTestCase)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(UniqueFixedPointsTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
 if __name__ == "__main__":

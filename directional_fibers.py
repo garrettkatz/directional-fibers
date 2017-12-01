@@ -3,6 +3,16 @@ import numpy as np
 import numerical_utilities as nu
 import itertools as it
 
+def eF(x, c, f, ef):
+    """
+    Forward error in F(x)
+    x: point on fiber
+    c, f, ef as in traverse_fiber
+    """
+    v, a = x[:-1,:], x[-1]
+    error = nu.eps(f(v) - a*c) + ef(v) + nu.eps(a*c) + nu.eps(a)*c
+    return error
+
 def refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance):
     residuals = []
     for i in it.count(1):
