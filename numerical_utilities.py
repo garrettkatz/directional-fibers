@@ -23,7 +23,7 @@ def mldivide(A, B):
     """
     Returns x, where x solves Ax = B. (A\B in MATLAB)
     """
-    return np.linalg.lstsq(A,B)[0]
+    return np.linalg.lstsq(A,B,rcond=None)[0]
 
 def mrdivide(B,A):
     """
