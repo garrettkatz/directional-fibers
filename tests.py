@@ -16,10 +16,10 @@ class UniqueFixedPointsTestCase(ut.TestCase):
         self.E = lambda V, u: (np.fabs(V - u) < self.noise*nu.eps(V)).all(axis=0)
     def get_test_points(self):
         """
-        Construct a set of 300 test points with at most 3 "unique" members.
+        Construct a set of P test points with at most K "unique" members.
         returns a numpy.array V, where V[:,p] is the p^{th} point.
         """
-        # make 100 copies of 3 distinct, random points
+        # make P copies of K distinct, random points
         V = np.tile(np.random.rand(self.N,self.K),(1,self.P))
         # shuffle randomly
         V = V[:,np.random.permutation(self.K*self.P)]

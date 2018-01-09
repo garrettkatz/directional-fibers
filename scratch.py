@@ -34,6 +34,7 @@ solution = fx.fiber_solver(
     
 fiber = solution["Fiber"]
 X = fiber["X"]
+z = fiber["z"]
 print("%d steps"%X.shape[1])
 # X = np.concatenate((-np.fliplr(X), X), axis=1)
 V = X[:-1,:]
@@ -43,6 +44,9 @@ lm_idx = (np.fabs(V) < lm).all(axis=0)
 # plt.subplot(1,2,1)
 plt.plot(V[0,:],V[1,:],'b-')
 plt.gca().quiver(V[0,lm_idx],V[1,lm_idx],C[0,lm_idx],C[1,lm_idx],scale=.005,units='dots',width=2,headwidth=5)
+print("z:")
+print(z)
+plt.plot([V[0,0], V[0,0]+z[0,0]],[V[1,0],V[1,0]+z[1,0]],'m-')
 
 
 for r in solution["Refinements"]:

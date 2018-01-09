@@ -69,6 +69,7 @@ def traverse_fiber(
     compute_step_amount,
     v=None,
     c=None,
+    z=None,
     N=None,
     terminate=None,
     logfile=None,
@@ -88,7 +89,8 @@ def traverse_fiber(
         step_data: output for any additional data that is saved for post-traversal analysis
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
-    N is the dimensionality of the dynamical system (defaults to shape of v or c).
+    z is an approximate initial tangent direction (automatically computed by default).
+    N is the dimensionality of the dynamical system (defaults to shape of v, c, or z).
     At least one of v, c, and N should be provided.
     
     If provided, the function terminate(x) should return True when x meets a custom termination criterion.
@@ -110,6 +112,7 @@ def traverse_fiber(
     "step_amounts": step_amounts[n] is the size used for the n^{th} step
     "step_datas": step_datas[n] is the step_data saved at the n^{th} step
     "c": c is the direction vector that was used
+    "z": z is the initial tangent vector that was used
     """
 
     # Set defaults
@@ -129,7 +132,8 @@ def traverse_fiber(
     
     # Initialize fiber tangent
     DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
-    z = compute_tangent(DF)
+    z = compute_tangent(DF, z=z)
+    z_init = z
 
     # Initialize outputs
     status = "Traversing"
@@ -185,4 +189,5 @@ def traverse_fiber(
         "step_amounts": np.array(step_amounts),
         "step_datas": step_datas,
         "c": c,
+        "z": z_init,
     }
