@@ -1,16 +1,15 @@
-fixed_point_solvers: post-processing function for fixed+unique
-baseline solver, attractor solver
-forward error for both fixed point and steps (fewer tolerances)
-log files
-    find a home for hardwrite (not numerical)
-    Logger class? hardwrite, and tracks indentation
-does magnitude of alpha (or alpha') relate to svd (for global bound)?
-repetitions in tests with multiple W
-"performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
-check fxpt locations of traversal
-Users sub-class DynamicalSystem object? with fDf, compute_step_size, etc
-svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
-establish usage first, then design
+code:
+    fixed_point_solvers: post-processing function for fixed+unique
+    baseline solver, attractor solver
+    forward error for both fixed point and steps (fewer tolerances)
+    log files
+        find a home for hardwrite (not numerical)
+        Logger class? hardwrite, and tracks indentation
+    repetitions in tests with multiple W
+    "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
+research:
+    does magnitude of alpha (or alpha') relate to svd (for global bound)?
+    svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
 
 solution = fxpts.fiber_solver(f[], Df[], c, step_size[], terminate[], unique_fxpts[], is_fixed[], settings...)
 solution.fiber
@@ -34,9 +33,3 @@ system-independent: drive to curve (NR1), compute tangent, take step (NR2), z ne
 settings:
 on-the-curve tolerance, number of NR steps for each NR scenario, number of traverse steps, max step size
 flags: whether to calc svd at every point
-
-Trade-offs
-f, Df vs fDf:
-    fDf saves work
-    f, Df can do f on 2d array
-

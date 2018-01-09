@@ -76,3 +76,4 @@ def terminate_factory(W, c):
     D_bound = min(1, 1/np.linalg.norm(W,ord=2))
     a_bound = ((np.arctanh(np.sqrt(1 - D_bound)) + np.fabs(W).sum(axis=1))/np.fabs(W.dot(c))).max()
     return lambda x: np.fabs(x[-1]) > a_bound
+

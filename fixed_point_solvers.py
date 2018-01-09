@@ -150,7 +150,6 @@ def fiber_solver(
         )
         refinement_results.append(refinement_result)
         fixed_points.append(refinement_result["X"][:-1,[-1]].copy())
-        # fixed_points.append(refinement_result["X"][:-1,[0]].copy())
     
     # Return output
     solution = {
@@ -160,4 +159,4 @@ def fiber_solver(
         "Fixed index": np.flatnonzero(fixed_index),
     }
     return solution
-        
+
