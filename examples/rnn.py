@@ -48,6 +48,42 @@ def ef_factory(W):
         return margin
     return ef
 
+def qg_factory(W):
+    """
+    For a given weight matrix W, returns the function qg, where
+    qg(v) returns the objective |f|^2 (and its gradient)
+    See (Barak and Sussillo 2013)
+    qg conforms to the scipy.optimize.minimize signature first parameter
+    """
+    f, Df = f_factory(W), Df_factory(W)
+    def qg(v):
+        """
+        v is a flat numpy array
+        returns
+            q: the objective |f|^2 at v (a scalar)
+            g: the gradient of q at v (a flat numpy array)
+        """
+        fv, Dfv = f(v[:,np.newaxis]), Df(v[:,np.newaxis])
+        q, g = (fv**2).sum(), Dfv.T.dot(fv).flatten()
+        return q, g
+    return qg
+
+def H_factory(W):
+    """
+    For a given weight matrix W, returns the function H, where
+    H(v) returns the approximate Hessian of the objective |f|^2
+    See (Barak and Sussillo 2013)
+    H conforms to the scipy.optimize.minimize signature "hess" parameter
+    """
+    Df = Df_factory(W)
+    def H(v):
+        """
+        Calculates the Hessian of |f|^2 at v
+        """
+        Dfv = Df(v[:,np.newaxis])
+        return Dfv.T.dot(Dfv)
+    return H
+
 def compute_step_amount_factory(W):
     """
     For a given weight matrix W, returns the function compute_step_amount,

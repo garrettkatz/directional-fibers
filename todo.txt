@@ -1,10 +1,12 @@
 code:
     fixed_point_solvers: post-processing function for fixed+unique
     baseline solver, attractor solver
+    more graceful error handling for critical directions (Baram email)
     forward error for both fixed point and steps (fewer tolerances)
     log files
         find a home for hardwrite (not numerical)
         Logger class? hardwrite, and tracks indentation
+        also handles timing?
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
 research:

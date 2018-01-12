@@ -1,61 +1,70 @@
-import numpy as np
-import directional_fibers as df
+import scipy.optimize as spo
 
-def is_fixed(f, ef, v):
+def local_solver(
+    sampler,
+    f,
+    qg,
+    H,
+    stop_time=None,
+    max_repeats=None,
+    max_updates=0,
+    logfile=None
+    ):
     """
-    Decide whether a point is fixed.
-    f: dynamical difference function
-    ef: estimate of f forward-error
-    v: each column is a point to check.
-    returns (fixed, error) where
-        fixed is False if v is definitely not fixed
-        error is ef(v)
-    """
-    error = ef(v)
-    fixed = (np.fabs(f(v)) < error).all(axis=0)
-    return fixed, error
+    A fixed point solver using repeated local optimization (Sussillo and Barak 2013)
+    Locally optimizes an objective function with minima at fixed points.
+    Repeatedly samples and optimizes points along random trajectories.
+    
+    User provides function handle sampler
+        sampler() returns random v in state space, an (N,1) ndarray
+    User provides function handle f, which accepts (N,1) ndarray v
+        f(v) returns change in v after one update
+    User provides function handles qg and H, which accept (N,) ndarray v
+    qg and H conform to scipy.optimize.minimize first parameter and "hess" parameter
+        qg(v) returns
+            q: the objective at v (a scalar)
+            g: the gradient of the objective (a (N,) ndarray)
+        H(v) returns
+            H: an approximate Hessian of q at v (a (N,N) ndarray)
+    If provided, the solver terminates at the clock time stop_time.
+    If provided, the solver terminates after max_repeats samples.
+    The solver iterates each sample under the system dynamics at most max_updates times before optimizing.
 
-def get_connected_components(V, E):
+    A dictionary with the following entries is returned:
+    "Seeds": ndarray where the n^th column is the n^th seed
+    "Updates": ndarray where the n^th element is the number of system updates for the n^th seed 
+    "Optima": ndarray where the n^th column is the optimum from the n^th seed
+    
     """
-    Find all connected components in an undirected unweighted graph.
-    V should be a 2D numpy.array, where V[:,p] is associated with the p^{th} node.
-    E should be an edge indicator function, i.e.
-      E(V, u)[p] == True iff there is an edge between V[:,p] and u.
-    Returns components, a 1D numpy.array where
-      components[p] == components[q] iff V[:,p] and V[:,q] are in the same connected component.
-    """
-    # Initialize each point in isolated component
-    components = np.arange(V.shape[1])
-    # Merge components one point at a time
-    for p in range(V.shape[1]):
-        # Index neighbors to current point
-        neighbors = E(V[:,:p+1], V[:,[p]])
-        # Merge components containing neighbors
-        components[:p+1][neighbors] = components[:p+1][neighbors].min()
-    return components
+    seeds, updates, optima = [], [], []
+    start = time.clock()
+    for repeat in it.count(1):
 
-def get_unique_points(V, duplicates, base=2):
-    """
-    Extract unique points from a set with potential duplicates.
-    V should be a 2D numpy.array, where V[:,p] is the p^{th} point.
-    duplicates should be a function handle, where
-      duplicates(V, v)[p] == True iff V[:,p] and v are to be considered duplicate points.
-    Recursively divides and conquers V until V.shape[1] <= base.
-    Returns U, where U[:,q] is the q^{th} extracted unique point.
-    """
-    if V.shape[1] > base:
-        # Divide and conquer
-        split_index = int(V.shape[1]/2)
-        U1 = get_unique_points(V[:,:split_index], duplicates, base=base)
-        U2 = get_unique_points(V[:,split_index:], duplicates, base=base)
-        # Prepare to merge result
-        V = np.concatenate((U1, U2),axis=1)
-    # Get connected components of neighbor graph
-    components = get_connected_components(V, duplicates)
-    # Extract representatives from each component
-    _, representative_index = np.unique(components, return_index=True)
-    U = V[:,representative_index]
-    return U
+        # Check termination criteria
+        if stop_time is not None and time.clock() >= stop_time: break
+        if max_repeats is not None and repeat >= max_repeats: break
+
+        # get random initial seed anywhere in range
+        v = sampler()
+        seeds.append(v)
+
+        # iterate trajectory a random number of steps
+        num_updates = np.random.randint(max_updates)
+        for u in range(num_updates):
+            v = v + f(v)
+        updates.append(num_updates)
+
+        # run minimization
+        result = spo.minimize(qg, v.flatten(), method='trust-ncg', jac=True, hess=H)
+        optimum = result.x.reshape(v.shape)
+        optima.append(optimum)
+
+    # Format output
+    return {
+        "Seeds": np.concatenate(seeds, axis=1),
+        "Updates": np.concatenate(updates),
+        "Optima": np.concatenate(optima, axis=1),
+    }
 
 def fiber_solver(
     f,
@@ -159,4 +168,3 @@ def fiber_solver(
         "Fixed index": np.flatnonzero(fixed_index),
     }
     return solution
-
