@@ -1,7 +1,6 @@
 import scipy.optimize as spo
 import fixed_points as fx
 
-
 def local_solver(
     sampler,
     f,
@@ -15,7 +14,7 @@ def local_solver(
     """
     A fixed point solver using local optimization (Sussillo and Barak 2013)
     Locally optimizes an objective function with minima at fixed points.
-    Repeatedly samples and optimizes points along random trajectories.
+    Finds multiple fixed points with repeated local optimization of seeds along random trajectories.
     
     User provides function handle sampler
         sampler() returns random v in state space, an (N,1) ndarray
