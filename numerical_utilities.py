@@ -29,7 +29,7 @@ def mrdivide(B,A):
     """
     Returns x, where x solves B = xA. (B/A in MATLAB)
     """
-    return np.linalg.lstsq(A.T, B.T)[0].T
+    return np.linalg.lstsq(A.T, B.T,rcond=None)[0].T
 
 def solve(A, B):
     """

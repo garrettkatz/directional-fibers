@@ -3,11 +3,13 @@ import unittest as ut
 import numpy as np
 import numerical_utilities as nu
 import directional_fibers as df
-import fixed_point_solvers as fx
+import fixed_points as fx
 import examples.rnn as rnn
 import matplotlib.pyplot as plt
 
-class UniqueFixedPointsTestCase(ut.TestCase):
+np.set_printoptions(linewidth=200)
+
+class FixedPointsTestCase(ut.TestCase):
     def setUp(self):
         self.N = 10
         self.P = 100
@@ -16,7 +18,7 @@ class UniqueFixedPointsTestCase(ut.TestCase):
         self.E = lambda V, u: (np.fabs(V - u) < self.noise*nu.eps(V)).all(axis=0)
     def get_test_points(self):
         """
-        Construct a set of P test points with at most K "unique" members.
+        Construct a set of P*K test points with at most K "unique" members.
         returns a numpy.array V, where V[:,p] is the p^{th} point.
         """
         # make P copies of K distinct, random points
@@ -41,8 +43,47 @@ class UniqueFixedPointsTestCase(ut.TestCase):
         U = fx.get_unique_points(V, self.E)
         self.assertTrue(U.shape[1] <= self.K)
         for p in range(V.shape[1]):
-            noise = (U - V[:,[p]]).max(axis=0)
+            noise = np.fabs(U - V[:,[p]]).max(axis=0)
             self.assertTrue(noise.min() < (self.noise*nu.eps(V[:,p])).max())
+
+class RNNFixedPointsTestCase(ut.TestCase):
+    def setUp(self):
+        self.N = 10
+        self.P = 5
+        self.W, self.V = rnn.make_known_fixed_points(self.N)
+        self.f = rnn.f_factory(self.W)
+        self.ef = rnn.ef_factory(self.W)
+        self.Df = rnn.Df_factory(self.W)
+        self.noise = 5
+        # self.duplicates = lambda V, u: (np.fabs(V - u) < 2*self.noise*nu.eps(V)).all(axis=0)
+        self.duplicates = rnn.duplicates_factory(self.W)
+    def get_test_points(self):
+        """
+        Construct a set of P*K test points based on K known fixed points
+        returns a numpy.array V, where V[:,p] is the p^{th} point.
+        """
+        # make P copies of K known points
+        V = np.tile(self.V, (1,self.P))
+        # shuffle randomly
+        V = V[:,np.random.permutation(V.shape[1])]
+        # perterb by a small multiple of machine precision
+        V = V + np.floor(self.noise*np.random.rand(*V.shape))*nu.eps(V)
+        return V
+    def test_sanitize_points(self):
+        """
+        Sanity check for refine_points
+        """
+        V = self.get_test_points()
+        U = fx.sanitize_points(V, self.f, self.ef, self.Df, self.duplicates)
+        print('')
+        print(V.shape)
+        print(U.shape)
+        print(self.V.shape)
+        self.assertTrue(U.shape[1] == self.V.shape[1])
+        for p in range(self.V.shape[1]):
+            # noise = np.fabs(U - self.V[:,[p]]).max(axis=0)
+            # self.assertTrue(noise.min() < (self.noise*nu.eps(self.V[:,p])).max())
+            self.assertTrue(self.duplicates(U, self.V[:,[p]]).any())
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
@@ -219,10 +260,11 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         self.assertTrue((np.fabs(X[[-1],:]*self.c - C) < 0.001).all())
 
 def main():
-    test_suite = ut.TestLoader().loadTestsFromTestCase(RNNDirectionalFiberTestCase)
-    test_suite = ut.TestLoader().loadTestsFromTestCase(UniqueFixedPointsTestCase)
+    # test_suite = ut.TestLoader().loadTestsFromTestCase(RNNDirectionalFiberTestCase)
+    # ut.TextTestRunner(verbosity=2).run(test_suite)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(FixedPointsTestCase)
+    ut.TextTestRunner(verbosity=2).run(test_suite)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(RNNFixedPointsTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
-if __name__ == "__main__":
-
-    main()
+if __name__ == "__main__": main()

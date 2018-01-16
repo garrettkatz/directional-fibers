@@ -1,19 +1,55 @@
 import numpy as np
+import numerical_utilities as nu
 import directional_fibers as df
 
-def is_fixed(f, ef, v):
+def is_fixed(V, f, ef):
     """
-    Decide whether a point is fixed.
+    Decide whether points are fixed.
+    V: (N,P) ndarray of points to check, one per column
     f: dynamical difference function
     ef: estimate of f forward-error
-    v: each column is a point to check.
     returns (fixed, error) where
-        fixed is False if v is definitely not fixed
-        error is ef(v)
+        fixed[p] is False if V[:,p] is definitely not fixed
+        error = ef(V)
     """
-    error = ef(v)
-    fixed = (np.fabs(f(v)) < error).all(axis=0)
+    error = ef(V)
+    fixed = (np.fabs(f(V)) < error).all(axis=0)
     return fixed, error
+
+def refine_points(V, f, ef, Df, max_iters=2**5, batch_size=100):
+    """
+    Refine candidate fixed points with Newton-Raphson iterations
+    V: (N,P)-ndarray, one candidate point per column
+    f, ef: as in is_fixed
+    Df(V)[p,:,:]: derivative of f(V[:,p])
+    max_iters: maximum Newton-Raphson iterations performed
+    batch_size: at most this many points solved for at a time (limits memory usage)
+    returns (V, fixed) where
+        V[:,p] is the p^th point after refinement
+        fixed[p] is True if the p^th point is fixed
+    """
+
+    # Split points into batches
+    num_splits = int(np.ceil(float(V.shape[1])/batch_size))
+    point_batches = np.array_split(V, num_splits, axis=1)
+    fixed_batches = []
+
+    for b in range(num_splits):
+
+        # Refine current batch with Newton-Raphson
+        points = point_batches[b]
+        fixed = np.zeros(points.shape[1], dtype=bool)
+        for i in range(max_iters):
+            B = points[:,~fixed]
+            B = B - nu.solve(Df(B), f(B).T).T
+            points[:,~fixed] = B
+            fixed[~fixed], _ = is_fixed(B, f, ef)
+            if fixed.all(): break
+        point_batches[b] = points
+        fixed_batches.append(fixed)
+
+    # Format output
+    return np.concatenate(point_batches, axis=1), np.concatenate(fixed_batches)
 
 def get_connected_components(V, E):
     """
@@ -57,3 +93,14 @@ def get_unique_points(V, duplicates, base=2):
     U = V[:,representative_index]
     return U
 
+def sanitize_points(V, f, ef, Df, duplicates, base=2):
+    """
+    Sanitize a set of candidate fixed points
+    Refines and removes non-fixed points and duplicates
+    V: (N,P) ndarray of P candidate points, one per column
+    f, ef, Df: as in refine_points
+    duplicates, base: as in get_unique_points
+    Returns (N,_) array of unique fixed points
+    """
+    V, fixed = refine_points(V, f, ef, Df)
+    return get_unique_points(V[:,fixed], duplicates, base=base)

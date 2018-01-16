@@ -1,4 +1,6 @@
 import scipy.optimize as spo
+import fixed_points as fx
+
 
 def local_solver(
     sampler,
@@ -11,7 +13,7 @@ def local_solver(
     logfile=None
     ):
     """
-    A fixed point solver using repeated local optimization (Sussillo and Barak 2013)
+    A fixed point solver using local optimization (Sussillo and Barak 2013)
     Locally optimizes an objective function with minima at fixed points.
     Repeatedly samples and optimizes points along random trajectories.
     
@@ -136,7 +138,7 @@ def fiber_solver(
         step_amount = np.sign(refine_step_amount)*min(np.fabs(refine_step_amount), fiber_step_amount)
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
-    refine_terminate = lambda x: is_fixed(f, ef, x[:-1,:])[0] or terminate(x)
+    refine_terminate = lambda x: fx.is_fixed(x[:-1,:], f, ef)[0] or terminate(x)
 
     # Run within-fiber Newton-Raphson at each candidate
     X = X[:, fixed_index]
@@ -152,7 +154,7 @@ def fiber_solver(
             terminate=refine_terminate,
             logfile=logfile,
             stop_time=stop_time,
-            max_traverse_steps=2**5, # only traverse enough for Newton-Raphson solve
+            max_traverse_steps=2**5, # few steps needed for Newton-Raphson
             max_step_size=max_step_size,
             max_solve_iterations=max_solve_iterations,
             solve_tolerance=solve_tolerance,

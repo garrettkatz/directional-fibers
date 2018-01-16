@@ -4,21 +4,27 @@ Basic recurrent neural network model with activation rule:
 """
 import numpy as np
 import numerical_utilities as nu
+import fixed_points as fx
 
 def f_factory(W):
     """
     For a given weight matrix W, returns the function f,
-    where f(v) is the change in network state v after one update
+    where f(V)[:,p] is the change in network state V[:,p] after one update
     """
-    return lambda v: np.tanh(W.dot(v)) - v
+    return lambda V: np.tanh(W.dot(V)) - V
     
 def Df_factory(W):
     """
     For a given weight matrix W, returns the function Df,
-    where Df(v) is the derivative of f(v)
+    where Df(V) is the derivative of f(V)
+    if V has more than one column, Df(V)[p,:,:] is the derivative at the p^th one
     """
     I = np.eye(W.shape[0])
-    return lambda v: (1-np.tanh(W.dot(v))**2)*W - I
+    def Df(V):
+        D = 1-np.tanh(W.dot(V))**2
+        if V.shape[1] == 1: return D*W - I
+        else: return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
+    return Df
 
 def ef_factory(W):
     """
@@ -113,3 +119,19 @@ def terminate_factory(W, c):
     a_bound = ((np.arctanh(np.sqrt(1 - D_bound)) + np.fabs(W).sum(axis=1))/np.fabs(W.dot(c))).max()
     return lambda x: np.fabs(x[-1]) > a_bound
 
+def duplicates_factory(W):
+    """
+    Simple duplicates check justified by (Katz and Reggia 2017)
+    """
+    return lambda V, v: (np.fabs(V - v) < 2**-21).all(axis=0)
+
+def make_known_fixed_points(N):
+
+    # Sample random points
+    V = 2.*np.random.rand(N,N) - 1.
+    # Construct weight matrix known to have them as fixed points
+    W = nu.mrdivide(np.arctanh(V), V)
+    # Refine points to counteract finite-precision round-off error
+    f, ef, Df = f_factory(W), ef_factory(W), Df_factory(W)
+    V, fixed = fx.refine_points(V, f, ef, Df)
+    return W, V[:,fixed]
