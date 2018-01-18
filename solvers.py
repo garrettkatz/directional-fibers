@@ -141,6 +141,7 @@ def fiber_solver(
         step_amount = np.sign(refine_step_amount)*min(np.fabs(refine_step_amount), fiber_step_amount)
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
+    if terminate is None: terminate = lambda x: False
     refine_terminate = lambda x: fx.is_fixed(x[:-1,:], f, ef)[0] or terminate(x)
 
     # Run within-fiber Newton-Raphson at each candidate

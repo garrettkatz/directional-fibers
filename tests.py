@@ -86,7 +86,7 @@ class RNNFixedPointsTestCase(ut.TestCase):
             # self.assertTrue(noise.min() < (self.noise*nu.eps(self.V[:,p])).max())
             self.assertTrue(self.duplicates(U, self.V[:,[p]]).any())
 
-class LocalSolverTestCase(ut.TestCase):
+class RNNLocalSolverTestCase(ut.TestCase):
     def setUp(self):
         self.N = 3
         self.P = 5
@@ -294,7 +294,7 @@ def main():
     # ut.TextTestRunner(verbosity=2).run(test_suite)
     # test_suite = ut.TestLoader().loadTestsFromTestCase(RNNFixedPointsTestCase)
     # ut.TextTestRunner(verbosity=2).run(test_suite)
-    test_suite = ut.TestLoader().loadTestsFromTestCase(LocalSolverTestCase)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(RNNLocalSolverTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
 if __name__ == "__main__": main()

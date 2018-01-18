@@ -1,5 +1,8 @@
 code:
+    non rnn example
     rnn wrappers for solvers
+    combo solver
+    for local and combo, smarter termination criteria (e.g., time since last new fixed point >= time to last new fixed point, after many points found)
     more graceful error handling for critical directions (Baram email)
     forward error everywhere instead of tolerances
     log files
@@ -8,7 +11,19 @@ code:
         also handles timing?
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
+
 research:
     does magnitude of alpha (or alpha') relate to svd (for global bound)?
     svd is ~n^3?  check that this dominates large N, and then try to just lower bound in < n^3 instead of compute exactly
 
+experiments:
+    reproduce last paper?
+    how often is there single c to rule them all?
+        keep sampling fibers until one finds all fixed points - both known by construction, and found by previous samples
+        statistics on # points in fibers (not so different from last paper)
+        patterns determining single c?
+        patterns bounding min fiber svd?
+    combo method:
+        comparison with fiber, local
+        empirical characterization of fiber topologies
+        typical rate of new points being found
