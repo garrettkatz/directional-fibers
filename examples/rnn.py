@@ -54,6 +54,10 @@ def ef_factory(W):
         return margin
     return ef
 
+def sampler_factory(W):
+    N = W.shape[0]
+    return lambda : 2*np.random.rand(N,1) - 1
+
 def qg_factory(W):
     """
     For a given weight matrix W, returns the function qg, where
@@ -135,3 +139,4 @@ def make_known_fixed_points(N):
     f, ef, Df = f_factory(W), ef_factory(W), Df_factory(W)
     V, fixed = fx.refine_points(V, f, ef, Df)
     return W, V[:,fixed]
+

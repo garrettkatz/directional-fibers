@@ -4,6 +4,7 @@ import numpy as np
 import numerical_utilities as nu
 import directional_fibers as df
 import fixed_points as fx
+import solvers as sv
 import examples.rnn as rnn
 import matplotlib.pyplot as plt
 
@@ -83,6 +84,33 @@ class RNNFixedPointsTestCase(ut.TestCase):
         for p in range(self.V.shape[1]):
             # noise = np.fabs(U - self.V[:,[p]]).max(axis=0)
             # self.assertTrue(noise.min() < (self.noise*nu.eps(self.V[:,p])).max())
+            self.assertTrue(self.duplicates(U, self.V[:,[p]]).any())
+
+class LocalSolverTestCase(ut.TestCase):
+    def setUp(self):
+        self.N = 3
+        self.P = 5
+        self.W, self.V = rnn.make_known_fixed_points(self.N)
+        self.f = rnn.f_factory(self.W)
+        self.ef = rnn.ef_factory(self.W)
+        self.Df = rnn.Df_factory(self.W)
+        self.sampler = rnn.sampler_factory(self.W)
+        self.qg = rnn.qg_factory(self.W)
+        self.H = rnn.H_factory(self.W)
+        self.duplicates = rnn.duplicates_factory(self.W)
+    def test_local_solver(self):
+        result = sv.local_solver(
+            self.sampler,
+            self.f,
+            self.qg,
+            self.H,
+            max_repeats=500,
+        )
+        V = result["Optima"]
+        U = fx.sanitize_points(V, self.f, self.ef, self.Df, self.duplicates)
+        print("This test should succeed with high probability")
+        self.assertTrue(U.shape[1] >= self.V.shape[1])
+        for p in range(self.V.shape[1]):
             self.assertTrue(self.duplicates(U, self.V[:,[p]]).any())
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
@@ -262,9 +290,11 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
 def main():
     # test_suite = ut.TestLoader().loadTestsFromTestCase(RNNDirectionalFiberTestCase)
     # ut.TextTestRunner(verbosity=2).run(test_suite)
-    test_suite = ut.TestLoader().loadTestsFromTestCase(FixedPointsTestCase)
-    ut.TextTestRunner(verbosity=2).run(test_suite)
-    test_suite = ut.TestLoader().loadTestsFromTestCase(RNNFixedPointsTestCase)
+    # test_suite = ut.TestLoader().loadTestsFromTestCase(FixedPointsTestCase)
+    # ut.TextTestRunner(verbosity=2).run(test_suite)
+    # test_suite = ut.TestLoader().loadTestsFromTestCase(RNNFixedPointsTestCase)
+    # ut.TextTestRunner(verbosity=2).run(test_suite)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(LocalSolverTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
 if __name__ == "__main__": main()

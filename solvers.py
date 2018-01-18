@@ -1,5 +1,9 @@
+import time
+import itertools as it
+import numpy as np
 import scipy.optimize as spo
 import fixed_points as fx
+import directional_fibers as df
 
 def local_solver(
     sampler,
@@ -50,7 +54,7 @@ def local_solver(
         seeds.append(v)
 
         # iterate trajectory a random number of steps
-        num_updates = np.random.randint(max_updates)
+        num_updates = np.random.randint(max_updates+1)
         for u in range(num_updates):
             v = v + f(v)
         updates.append(num_updates)
@@ -63,7 +67,7 @@ def local_solver(
     # Format output
     return {
         "Seeds": np.concatenate(seeds, axis=1),
-        "Updates": np.concatenate(updates),
+        "Updates": np.array(updates),
         "Optima": np.concatenate(optima, axis=1),
     }
 

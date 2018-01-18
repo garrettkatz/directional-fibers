@@ -41,7 +41,9 @@ def refine_points(V, f, ef, Df, max_iters=2**5, batch_size=100):
         fixed = np.zeros(points.shape[1], dtype=bool)
         for i in range(max_iters):
             B = points[:,~fixed]
-            B = B - nu.solve(Df(B), f(B).T).T
+            DfB = Df(B)
+            if len(DfB.shape)==2: DfB = DfB[np.newaxis,:,:]
+            B = B - nu.solve(DfB, f(B).T).T
             points[:,~fixed] = B
             fixed[~fixed], _ = is_fixed(B, f, ef)
             if fixed.all(): break
@@ -100,7 +102,7 @@ def sanitize_points(V, f, ef, Df, duplicates, base=2):
     V: (N,P) ndarray of P candidate points, one per column
     f, ef, Df: as in refine_points
     duplicates, base: as in get_unique_points
-    Returns (N,_) array of unique fixed points
+    Returns (N,K) ndarray of K unique fixed points
     """
     V, fixed = refine_points(V, f, ef, Df)
     return get_unique_points(V[:,fixed], duplicates, base=base)
