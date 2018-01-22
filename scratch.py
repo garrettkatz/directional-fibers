@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import directional_fibers as df
-import fixed_point_solvers as fx
-import examples.rnn as rnn
+import dfibers.directional_fibers as df
+import dfibers.solvers as sv
+import dfibers.examples.rnn as rnn
 
 N = 2
 W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
@@ -18,7 +18,7 @@ max_solve_iterations = 2**5
 solve_tolerance = 10**-18
 max_step_size = 1
 
-solution = fx.fiber_solver(
+solution = sv.fiber_solver(
     f,
     ef,
     Df,

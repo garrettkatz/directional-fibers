@@ -3,8 +3,10 @@ Basic recurrent neural network model with activation rule:
     v[t+1] = np.tanh(W.dot(v[t]))
 """
 import numpy as np
-import numerical_utilities as nu
-import fixed_points as fx
+import matplotlib.pyplot as plt
+import dfibers.numerical_utilities as nu
+import dfibers.fixed_points as fx
+import dfibers.solvers as sv
 
 def f_factory(W):
     """
@@ -140,3 +142,72 @@ def make_known_fixed_points(N):
     V, fixed = fx.refine_points(V, f, ef, Df)
     return W, V[:,fixed]
 
+def run_fiber_solver(W, **kwargs):
+    """
+    rnn-specific convenience wrapper for generic fiber solver and post-processing
+    W is the (N,N) weight matrix; kwargs are as in dfibers.solvers.fiber_solver
+    """
+
+    # Setup random c for termination criteria
+    N = W.shape[0]
+    if "c" in kwargs:
+        c = kwargs["c"]
+    else:
+        c = np.random.randn(N,1)
+        c = c/np.linalg.norm(c)
+
+    # Run solver from origin
+    solution = sv.fiber_solver(
+        f = f_factory(W),
+        ef = ef_factory(W),
+        Df = Df_factory(W),
+        compute_step_amount = compute_step_amount_factory(W),
+        v = np.zeros((N,1)),
+        c = c,
+        terminate = terminate_factory(W, c),
+        max_step_size = 1,
+        max_solve_iterations = 2**5,
+        solve_tolerance = 10**-18,
+        **kwargs
+    )
+
+    # Post-process fixed points
+    fxpts = solution["Fixed points"]
+    fxpts = np.concatenate((-fxpts, np.zeros((N,1)), fxpts), axis=1)
+    fxpts = fx.sanitize_points(
+        fxpts,
+        f = f_factory(W),
+        ef = ef_factory(W),
+        Df = Df_factory(W),
+        duplicates = duplicates_factory(W),
+    )
+    
+    # Return post-processed fixed points and full solver result
+    return fxpts, solution
+
+if __name__ == "__main__":
+
+    # Set up 2D network
+    N = 2
+    W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
+
+    # Run solver
+    fxpts, solution = run_fiber_solver(W)
+    
+    # Extract steps along fiber and corresponding f(v)'s
+    fiber = solution["Fiber"]
+    X = fiber["X"]
+    X = np.concatenate((-np.fliplr(X), X), axis=1)
+    V = X[:-1,:]
+    f = f_factory(W)
+    C = f(V)
+
+    # Plot fiber and fixed points
+    lm = 1.25
+    lm_idx = (np.fabs(V) < lm).all(axis=0)
+    plt.plot(V[0,:],V[1,:],'b-')
+    plt.gca().quiver(V[0,lm_idx],V[1,lm_idx],C[0,lm_idx],C[1,lm_idx],scale=.005,units='dots',width=2,headwidth=5)    
+    plt.plot(fxpts[0,:], fxpts[1,:],'ro')
+    plt.xlim((-lm,lm))
+    plt.ylim((-lm,lm))
+    plt.show()

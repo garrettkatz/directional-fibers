@@ -1,12 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-print(__name__)
-import os
-print(os.path.abspath(__file__))
-# __package__ = "dfibs"
-print(__package__)
-# from .. import solvers as sv
+import dfibers.solvers as sv
 
 xy = np.mgrid[-3:3:30j, -3:3:30j]
 x, y = xy[0], xy[1]
