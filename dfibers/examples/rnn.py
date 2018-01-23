@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import dfibers.numerical_utilities as nu
 import dfibers.fixed_points as fx
+import dfibers.traversal as tv
 import dfibers.solvers as sv
 
 def f_factory(W):
@@ -199,15 +200,12 @@ if __name__ == "__main__":
     X = fiber["X"]
     X = np.concatenate((-np.fliplr(X), X), axis=1)
     V = X[:-1,:]
-    f = f_factory(W)
-    C = f(V)
 
     # Plot fiber and fixed points
-    lm = 1.25
-    lm_idx = (np.fabs(V) < lm).all(axis=0)
-    plt.plot(V[0,:],V[1,:],'b-')
-    plt.gca().quiver(V[0,lm_idx],V[1,lm_idx],C[0,lm_idx],C[1,lm_idx],scale=.005,units='dots',width=2,headwidth=5)    
+    X_grid, Y_grid = np.mgrid[-1:1:20j,-1:1:20j]
+    tv.plot_fiber(X_grid, Y_grid, V, f_factory(W), scale_XY=1, scale_V=1)
     plt.plot(fxpts[0,:], fxpts[1,:],'ro')
-    plt.xlim((-lm,lm))
-    plt.ylim((-lm,lm))
+    plt.xlabel("v_1")
+    plt.ylabel("v_2")
     plt.show()
+    

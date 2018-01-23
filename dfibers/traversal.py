@@ -2,6 +2,7 @@ import time
 import numpy as np
 import numerical_utilities as nu
 import itertools as it
+import matplotlib.pyplot as plt
 
 def eF(x, c, f, ef):
     """
@@ -19,6 +20,7 @@ def refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance):
         v, a = x[:-1,:], x[-1]
         F = f(v) - a*c
         residuals.append(np.fabs(F).max())
+        if not np.isfinite(F).all(): break
         if (np.fabs(F) < solve_tolerance).all(): break
         DF = np.concatenate((Df(v), -c), axis=1)
         x = x - nu.mldivide(DF, F)
@@ -106,7 +108,7 @@ def traverse_fiber(
     At least one of max_solve_iterations and solve_tolerance should be provided.
 
     A dictionary with the following entries is returned:
-    "status": one of "Terminated", "Closed loop", "Max steps", "Timed out".
+    "status": one of "Terminated", "Closed loop", "Max steps", "Timed out", "Diverged".
     "X": X[:,n] is the n^{th} point along the fiber
     "residuals": residuals[n] is the residual error after Newton's method at the n^{th} step
     "step_amounts": step_amounts[n] is the size used for the n^{th} step
@@ -123,24 +125,35 @@ def traverse_fiber(
         c = c/np.sqrt((c**2).sum())    
     x = np.zeros((N+1,1))
     if v is not None:
-        a = f(v)/c
         x[:N,:] = v
-        x[N,:] = a[np.isfinite(a)].mean()
+        x[N,:] = (f(v)[c != 0] / c[c != 0]).mean()
 
     # Drive initial va to fiber in case of residual error
     x, initial_residuals = refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance)
     
-    # Initialize fiber tangent
-    DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
-    z = compute_tangent(DF, z=z)
-    z_init = z
-
     # Initialize outputs
     status = "Traversing"
     X = [x]
     residuals = [initial_residuals[-1]]
     step_amounts = []
     step_datas = []
+
+    
+    if not np.isfinite(initial_residuals[-1]).all():
+        return {
+            "status": "Diverged",
+            "X": x,
+            "residuals": np.array([initial_residuals[-1]]),
+            "step_amounts": np.array(step_amounts),
+            "step_datas": step_datas,
+            "c": c,
+            "z": z,
+        }
+    
+    # Initialize fiber tangent
+    DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
+    z = compute_tangent(DF, z=z)
+    z_init = z
 
     # Traverse
     for step in it.count(0):
@@ -191,3 +204,34 @@ def traverse_fiber(
         "c": c,
         "z": z_init,
     }
+
+def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1):
+    """
+    Plots a fiber within a 2d state space
+    pt.show still needs to be called separately
+    X, Y: 2d ndarrays as returned by np.meshgrid
+    V: (2,P) ndarray of P points along the fiber
+    f: as in traverse_fiber
+    ax: axis on which to draw
+    """
+
+    # Calculate direction vectors
+    XY = np.array([X.flatten(), Y.flatten()])
+    C_XY = f(XY)
+    C_V = f(V)
+
+    # Set up draw axes
+    if ax is None: ax = plt.gca()
+
+    # Draw ambient direction vectors
+    ax.quiver(XY[0,:],XY[1,:],C_XY[0,:],C_XY[1,:],color=0.5*np.ones((1,3)),
+        scale=scale_XY,units='xy',angles='xy')
+
+    # Draw fiber with incident direction vectors
+    ax.plot(V[0,:],V[1,:],'k-')
+    ax.quiver(V[0,:],V[1,:],C_V[0,:],C_V[1,:],color=0.0*np.ones((1,3)),
+        scale=scale_V,units='xy',angles='xy')
+
+    # Set limits based on grid and show
+    plt.xlim((X.min(),X.max()))
+    plt.ylim((Y.min(),Y.max()))

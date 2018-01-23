@@ -1,9 +1,9 @@
 import time
 import itertools as it
 import numpy as np
-import scipy.optimize as spo
+import scipy.optimize as so
 import fixed_points as fx
-import directional_fibers as df
+import traversal as tv
 
 def local_solver(
     sampler,
@@ -60,7 +60,7 @@ def local_solver(
         updates.append(num_updates)
 
         # run minimization
-        result = spo.minimize(qg, v.flatten(), method='trust-ncg', jac=True, hess=H)
+        result = so.minimize(qg, v.flatten(), method='trust-ncg', jac=True, hess=H)
         optimum = result.x.reshape(v.shape)
         optima.append(optimum)
 
@@ -99,7 +99,7 @@ def fiber_solver(
     """
 
     # Traverse fiber
-    fiber_result = df.traverse_fiber(
+    fiber_result = tv.traverse_fiber(
         f,
         Df,
         compute_step_amount,
@@ -149,7 +149,7 @@ def fiber_solver(
     refinement_results = []
     fixed_points = []
     for i in range(X.shape[1]):
-        refinement_result = df.traverse_fiber(
+        refinement_result = tv.traverse_fiber(
             f,
             Df,
             compute_refine_step_amount,

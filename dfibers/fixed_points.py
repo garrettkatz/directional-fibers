@@ -1,6 +1,5 @@
 import numpy as np
 import numerical_utilities as nu
-import directional_fibers as df
 
 def is_fixed(V, f, ef):
     """
