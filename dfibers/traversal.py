@@ -137,7 +137,6 @@ def traverse_fiber(
     residuals = [initial_residuals[-1]]
     step_amounts = []
     step_datas = []
-
     
     if not np.isfinite(initial_residuals[-1]).all():
         return {
@@ -228,10 +227,12 @@ def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1):
         scale=scale_XY,units='xy',angles='xy')
 
     # Draw fiber with incident direction vectors
-    ax.plot(V[0,:],V[1,:],'k-')
+    ax.plot(V[0,:],V[1,:],'k-',linewidth=1)
     ax.quiver(V[0,:],V[1,:],C_V[0,:],C_V[1,:],color=0.0*np.ones((1,3)),
         scale=scale_V,units='xy',angles='xy')
 
     # Set limits based on grid and show
-    plt.xlim((X.min(),X.max()))
-    plt.ylim((Y.min(),Y.max()))
+    for axis in ['top','bottom','left','right']:
+        ax.spines[axis].set_linewidth(1)
+    ax.set_xlim((X.min(),X.max()))
+    ax.set_ylim((Y.min(),Y.max()))

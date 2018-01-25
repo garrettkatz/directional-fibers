@@ -86,6 +86,9 @@ if __name__ == "__main__":
     ax.quiver(*np.concatenate((V,.1*C),axis=0),color='black')
     for a in attractor:
         ax.plot(*a, color='gray', linestyle='-', alpha=0.5)
+    br1 = np.sqrt(b*(r-1))
+    U = np.array([[0, 0, 0],[br1,br1,r-1],[-br1,-br1,r-1]]).T
+    ax.scatter(*U, color='black')
     
     ax.set_xlabel("x")
     ax.set_ylabel("y")

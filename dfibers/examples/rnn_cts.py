@@ -1,7 +1,7 @@
 """
 Hopfield's analog neural network model:
     dv/dt = (T.dot(g(v)) - v/R + I)/C
-    g(v) = (2/np.pi)*np.arctanh(np.pi*L*v/2)
+    g(v) = (2/np.pi)*np.arctan(np.pi*L*v/2)
 """
 import numpy as np
 import scipy.integrate as si
@@ -26,7 +26,8 @@ def Df_factory(T, L, R, I, C):
     """
     def Df(V):
         D = (2/np.pi)*np.pi*L/2/(1 + (np.pi*L*V/2)**2)
-        return (T.dot(np.diagflat(D)) - np.diagflat(R**-1)).dot(np.diagflat(C**-1))
+        # return (T.dot(np.diagflat(D)) - np.diagflat(R**-1)).dot(np.diagflat(C**-1))
+        return np.diagflat(C**-1).dot((T.dot(np.diagflat(D)) - np.diagflat(R**-1)))
     return Df
 
 def ef_factory(T, L, R, I, C):

@@ -54,7 +54,7 @@ if __name__ == "__main__":
         "c": c,
         "terminate": lambda x: (np.fabs(x[:2,:]) > 10).any(),
         "max_step_size": 1,
-        "max_traverse_steps": 3000,
+        "max_traverse_steps": 500,
         "max_solve_iterations": 2**5,
         "solve_tolerance": 10**-15,
     }
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     ax_fiber = pt.gca()
     ax_fiber.plot(V_a[0,:],V_a[1,:],'.',color='gray') # attractor
     tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=20, scale_V=5)
-    ax_fiber.plot(x_fx, y_fx, 'bo') # fixed points
+    ax_fiber.plot(x_fx, y_fx, 'ko') # fixed points
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points
     ax_fiber.set_xlabel("x")
     ax_fiber.set_ylabel("y")
