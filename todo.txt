@@ -1,9 +1,10 @@
 code:
+    clean up isfinite handling, more principled error handling
+        more graceful error handling for critical directions (Baram email)
     optimize rosenbrock optimization and check on lork Df areas (is DF also?)
     plotting with * shortcut
     combo solver
     for local and combo, smarter termination criteria (e.g., time since last new fixed point >= time to last new fixed point, after many points found)
-    more graceful error handling for critical directions (Baram email)
     forward error everywhere instead of tolerances
     log files
         find a home for hardwrite (not numerical)
