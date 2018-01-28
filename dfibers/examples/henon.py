@@ -92,7 +92,7 @@ if __name__ == "__main__":
 
     # Visualize fiber and attractor
     ax_fiber = pt.gca()
-    ax_fiber.plot(V_a[0,:],V_a[1,:],'.',color='gray') # attractor
+    ax_fiber.scatter(*V_a, marker='.', s=1, color=((0.3, 0.3, 0.3),)) # attractor
     tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=20, scale_V=5)
     ax_fiber.plot(x_fx, y_fx, 'ko') # fixed points
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points

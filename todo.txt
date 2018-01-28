@@ -1,9 +1,10 @@
 code:
+    change compute_step_amount and terminate signatures to operate on a "frame/cusp/apex/frontier/nose/nosecone/coma" with all information that could be pertinent (x, DF, z, c, numsteps, etc), even maybe all info so far, so ends up being most of return value ("traversal data"/trail)
+    numerical_utilities newton_solve
     clean up isfinite handling, more principled error handling
         more graceful error handling for critical directions (Baram email)
     optimize rosenbrock optimization and check on lork Df areas (is DF also?)
-    plotting with * shortcut
-    combo solver
+    fiber_bisolver, fiber_multisolver with symmetry="odd" argument
     for local and combo, smarter termination criteria (e.g., time since last new fixed point >= time to last new fixed point, after many points found)
     forward error everywhere instead of tolerances
     log files
@@ -22,6 +23,7 @@ experiments:
     reproduce last paper?
     how often is there single c to rule them all?
         keep sampling fibers until one finds all fixed points - both known by construction, and found by previous samples
+            stronger if you use existing global solvers for ground truth
         statistics on # points in fibers (not so different from last paper)
         patterns determining single c?
         patterns bounding min fiber svd?
@@ -29,3 +31,6 @@ experiments:
         comparison with fiber, local
         empirical characterization of fiber topologies
         typical rate of new points being found
+
+doc:
+    requires numpy 1.14

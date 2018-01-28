@@ -204,7 +204,7 @@ if __name__ == "__main__":
     # Plot fiber and fixed points
     X_grid, Y_grid = np.mgrid[-1:1:20j,-1:1:20j]
     tv.plot_fiber(X_grid, Y_grid, V, f_factory(W), scale_XY=1, scale_V=1)
-    plt.plot(fxpts[0,:], fxpts[1,:],'ko')
+    plt.scatter(*fxpts, color='k', marker='o')
     plt.xlabel("v_1")
     plt.ylabel("v_2")
     plt.show()

@@ -138,46 +138,15 @@ def traverse_fiber(
     step_amounts = []
     step_datas = []
     
-    if not np.isfinite(initial_residuals[-1]).all():
-        return {
-            "status": "Diverged",
-            "X": x,
-            "residuals": np.array([initial_residuals[-1]]),
-            "step_amounts": np.array(step_amounts),
-            "step_datas": step_datas,
-            "c": c,
-            "z": z,
-        }
-    
-    # Initialize fiber tangent
-    DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
-    z = compute_tangent(DF, z=z)
-    z_init = z
-
     # Traverse
     for step in it.count(0):
-
-        # Check for early termination criteria
-        if max_traverse_steps is not None and step >= max_traverse_steps:
-            status = "Max steps"
-            break
-        if stop_time is not None and time.clock() >= stop_time:
-            status = "Timed out"
-            break
-        # Check custom termination criteria
-        if terminate is not None and terminate(x):
-            status = "Terminated"
-            break            
-        # Check for closed loop
-        if len(X) > 2 and np.fabs(X[-1]-X[0]).max() < np.fabs(X[2]-X[0]).max():
-            status = "Closed loop"
-            break
 
         # Update DF
         DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
         
         # Update tangent
         z = compute_tangent(DF, z)
+        if step == 0: z_init = z
 
         # Get step size
         step_amount, step_data = compute_step_amount(x, DF, z)
@@ -192,6 +161,22 @@ def traverse_fiber(
         residuals.append(step_residuals[-1])
         step_amounts.append(step_amount)
         step_datas.append(step_data)
+
+        # Check for early termination criteria
+        if max_traverse_steps is not None and step >= max_traverse_steps:
+            status = "Max steps"
+            break
+        if stop_time is not None and time.clock() >= stop_time:
+            status = "Timed out"
+            break
+        # Check custom termination criteria
+        if terminate is not None and terminate(x):
+            status = "Terminated"
+            break
+        # Check for closed loop
+        if len(X) > 2 and np.fabs(X[-1]-X[0]).max() < np.fabs(X[2]-X[0]).max():
+            status = "Closed loop"
+            break
         
     # final output
     return {

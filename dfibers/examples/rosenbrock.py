@@ -75,10 +75,10 @@ if __name__ == "__main__":
     # Visualize fiber and surface
     ax_fiber = pt.subplot(1,2,1)
     tv.plot_fiber(X_fiber, Y_fiber, V, f, ax=ax_fiber, scale_XY=500, scale_V=25)
-    ax_fiber.plot([1],[1],'bo') # global optimum
+    ax_fiber.plot([1],[1],'ko') # global optimum
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points
     ax_surface = pt.gcf().add_subplot(1,2,2,projection="3d")
-    ax_surface.plot_surface(X_surface, Y_surface, R, linewidth=0, antialiased=False)
+    ax_surface.plot_surface(X_surface, Y_surface, R, linewidth=0, antialiased=False, color='gray')
     ax_surface.view_init(azim=-98, elev=21)
     for ax in [ax_fiber, ax_surface]:
         ax.set_xlabel("x")

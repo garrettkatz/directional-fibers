@@ -26,7 +26,6 @@ def Df_factory(T, L, R, I, C):
     """
     def Df(V):
         D = (2/np.pi)*np.pi*L/2/(1 + (np.pi*L*V/2)**2)
-        # return (T.dot(np.diagflat(D)) - np.diagflat(R**-1)).dot(np.diagflat(C**-1))
         return np.diagflat(C**-1).dot((T.dot(np.diagflat(D)) - np.diagflat(R**-1)))
     return Df
 
@@ -48,14 +47,6 @@ if __name__ == "__main__":
     Df = Df_factory(T,L,R,I,C)
     ef = ef_factory(T,L,R,I,C)
 
-    # Collect attractor points
-    attractor = []
-    t = np.arange(0,40,0.01)
-    for s in range(5):
-        v = 2*np.random.rand(N,1) - 1
-        V = si.odeint(lambda v, t: f(v.reshape((N,1))).flatten(), v.flatten(), t)
-        attractor.append(V.T)
-    
     # Set up fiber arguments
     v = np.zeros((N,1))
     # c = np.random.randn(N,1)
@@ -88,7 +79,7 @@ if __name__ == "__main__":
     V = np.concatenate((np.fliplr(V1), V2), axis=1)
     V = V[:,::20]
 
-    # Visualize fiber, energy contours, and attractors
+    # Visualize fiber and energy contours
     X_e, Y_e = np.mgrid[-2:2:40j,-2:2:40j]
     V_e = np.array([X_e.flatten(), Y_e.flatten()])
     G_e = (2/np.pi)*np.arctan(np.pi*L*V_e/2)
@@ -97,8 +88,6 @@ if __name__ == "__main__":
     E = E + (I*G_e).sum(axis=0)
     E = E.reshape(X_e.shape)
     pt.contour(X_e, Y_e, E, [-.11, -.08, .1, .5, 1], colors='gray', linestyles='solid')
-    # for a in attractor:
-    #     pt.plot(*a, color='gray', linestyle='-', alpha=0.5)
     X_f, Y_f = np.mgrid[-2:2:15j,-2:2:15j]
     tv.plot_fiber(X_f, Y_f, V, f, scale_XY=8, scale_V=3)
     
