@@ -13,6 +13,10 @@ code:
         also handles timing?
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
+    more examples
+        multivariate poly finite soln
+        1d: mackey-glass, population dynamics
+    mayavi for 3d
 
 research:
     forni morse theory idea
