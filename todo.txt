@@ -16,6 +16,7 @@ code:
     more examples
         multivariate poly finite soln
         1d: mackey-glass, population dynamics
+        compare with various global solvers in scipy like basin hopping
     mayavi for 3d
 
 research:
