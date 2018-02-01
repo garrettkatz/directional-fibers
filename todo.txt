@@ -1,5 +1,6 @@
 code:
     change compute_step_amount and terminate signatures to operate on a "frame/cusp/apex/frontier/nose/nosecone/coma" with all information that could be pertinent (x, DF, z, c, numsteps, etc), even maybe all info so far, so ends up being most of return value ("traversal data"/trail)
+        FiberTrace
     numerical_utilities newton_solve
     clean up isfinite handling, more principled error handling
         more graceful error handling for critical directions (Baram email)
