@@ -135,14 +135,14 @@ def fiber_solver(
     fixed_index[1:] = np.logical_or(fixed_index[1:], fixed_index[:-1])
 
     # Set up within-fiber Newton-Raphson step computation
-    def compute_refine_step_amount(x, DF, z):
-        refine_step_amount = -x[-1,0]/z[-1,0]
-        fiber_step_amount, fiber_step_data = compute_step_amount(x, DF, z)
+    def compute_refine_step_amount(trace):
+        refine_step_amount = -trace.x[-1,0]/trace.z[-1,0]
+        fiber_step_amount, fiber_step_data = compute_step_amount(trace)
         step_amount = np.sign(refine_step_amount)*min(np.fabs(refine_step_amount), fiber_step_amount)
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
     if terminate is None: terminate = lambda x: False
-    refine_terminate = lambda x: fx.is_fixed(x[:-1,:], f, ef)[0] or terminate(x)
+    refine_terminate = lambda trace: fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
 
     # Run within-fiber Newton-Raphson at each candidate
     X = X[:, fixed_index]

@@ -65,6 +65,19 @@ def take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance
         x = x + nu.solve(Dg, delta_g)
     return x, residuals
 
+class FiberTrace(object):
+    def __init__(self, c):
+        self.status = "Traversing"
+        self.c = c
+        self.x = None
+        self.z = None
+        self.DF = None
+        self.points = []
+        self.tangents = []
+        self.residuals = []
+        self.step_sizes = []
+        self.step_data = []
+
 def traverse_fiber(
     f,
     Df,
@@ -85,17 +98,20 @@ def traverse_fiber(
     """
     Traverses a directional fiber.
     All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
-    The user provides functions f(v), Df(v), where v is N x 1
-    The user-provided function compute_step_amount(x, DF, z) should return:
+    Traversal state is maintained in a FiberTrace object
+    The user provides functions f(v), Df(v), ef(v) where v is N x 1
+    The user-provided function compute_step_amount(trace) should return:
         step_amount: signed step size at point x along fiber with derivative DF and tangent z
         step_data: output for any additional data that is saved for post-traversal analysis
+    where trace is a FiberTrace object with fields including x, DF, and z
+
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
     z is an approximate initial tangent direction (automatically computed by default).
     N is the dimensionality of the dynamical system (defaults to shape of v, c, or z).
     At least one of v, c, and N should be provided.
     
-    If provided, the function terminate(x) should return True when x meets a custom termination criterion.
+    If provided, the function terminate(trace) should return True when trace meets a custom termination criterion.
     If provided, progress is written to the file object logfile.
     If provided, traversal terminates at the clock time stop_time.
     If provided, traversal terminates after max_traverse_steps.
@@ -119,7 +135,7 @@ def traverse_fiber(
 
     # Set defaults
     if v is not None: N = v.shape[0]
-    if c is not None: N = c.shape[0]    
+    if c is not None: N = c.shape[0]
     if c is None:
         c = np.random.randn(N,1)
         c = c/np.sqrt((c**2).sum())    
@@ -128,15 +144,15 @@ def traverse_fiber(
         x[:N,:] = v
         x[N,:] = (f(v)[c != 0] / c[c != 0]).mean()
 
+
     # Drive initial va to fiber in case of residual error
     x, initial_residuals = refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance)
     
-    # Initialize outputs
-    status = "Traversing"
-    X = [x]
-    residuals = [initial_residuals[-1]]
-    step_amounts = []
-    step_datas = []
+    # Initialize trace
+    trace = FiberTrace(c)
+    trace.x = x
+    trace.points.append(x)
+    trace.residuals.append(initial_residuals[-1])
     
     # Traverse
     for step in it.count(0):
@@ -147,44 +163,50 @@ def traverse_fiber(
         # Update tangent
         z = compute_tangent(DF, z)
         if step == 0: z_init = z
+        
+        # Update trace
+        trace.z = z
+        trace.DF = DF
+        trace.tangents.append(z)
 
         # Get step size
-        step_amount, step_data = compute_step_amount(x, DF, z)
+        step_amount, step_data = compute_step_amount(trace)
         if max_step_size is not None:
             step_amount = np.sign(step_amount)*min(np.fabs(step_amount), max_step_size)
-       
+               
         # Update x
         x, step_residuals = take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance)
 
         # Store progress
-        X.append(x)
-        residuals.append(step_residuals[-1])
-        step_amounts.append(step_amount)
-        step_datas.append(step_data)
+        trace.x = x
+        trace.points.append(x)
+        trace.residuals.append(step_residuals[-1])
+        trace.step_sizes.append(step_amount)
+        trace.step_data.append(step_data)
 
         # Check for early termination criteria
-        if max_traverse_steps is not None and step >= max_traverse_steps:
-            status = "Max steps"
+        if max_traverse_steps is not None and step + 1 >= max_traverse_steps:
+            trace.status = "Max steps"
             break
         if stop_time is not None and time.clock() >= stop_time:
-            status = "Timed out"
+            trace.status = "Timed out"
             break
         # Check custom termination criteria
-        if terminate is not None and terminate(x):
-            status = "Terminated"
+        if terminate is not None and terminate(trace):
+            trace.status = "Terminated"
             break
         # Check for closed loop
-        if len(X) > 2 and np.fabs(X[-1]-X[0]).max() < np.fabs(X[2]-X[0]).max():
-            status = "Closed loop"
+        if len(trace.points) > 2 and np.fabs(trace.points[-1]-trace.points[0]).max() < np.fabs(trace.points[2]-trace.points[0]).max():
+            trace.status = "Closed loop"
             break
         
     # final output
     return {
-        "status": status,
-        "X": np.concatenate(X,axis=1),
-        "residuals": np.array(residuals),
-        "step_amounts": np.array(step_amounts),
-        "step_datas": step_datas,
+        "status": trace.status,
+        "X": np.concatenate(trace.points,axis=1),
+        "residuals": np.array(trace.residuals),
+        "step_amounts": np.array(trace.step_sizes),
+        "step_datas": trace.step_data,
         "c": c,
         "z": z_init,
     }
