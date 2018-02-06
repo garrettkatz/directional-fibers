@@ -34,8 +34,9 @@ solution = sv.fiber_solver(
     max_solve_iterations=2**5,
     )
 
+duplicates = lambda U, v: (np.fabs(U - v) < 2**-21).all(axis=0)
+
 import dfibers.fixed_points as fx
-duplicates = lambda V, v: (np.fabs(V - v) < 2**-21).all(axis=0)
 V = solution["Fixed points"]
 V = fx.sanitize_points(V, f, ef, Df, duplicates)
 

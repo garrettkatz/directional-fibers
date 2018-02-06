@@ -33,7 +33,7 @@ To find fixed points with `directional-fibers`, first you need to define your dy
 >>> f = lambda v: np.tanh(W.dot(v)) - v
 ```
 
-Next you must define a function `Df` that computes the NxN Jacobian of `f`.  Only dynamical systems with differentiable `f` can be used.  If v has more than one column, then Df should be a 3d np.array, where `Df(v)[k,:,:]` is the Jacobian evaluated at `v[:,[k]]`.  Continuing the example:
+Next you must define a function `Df` that computes the NxN Jacobian of `f`.  Only dynamical systems with differentiable `f` can be used.  If v has more than one column, then Df should be a 3d numpy array, where `Df(v)[k,:,:]` is the Jacobian evaluated at `v[:,[k]]`.  Continuing the example:
 
 ```python
 >>> I = np.eye(W.shape[0])
@@ -63,7 +63,7 @@ You can define a custom termination criterion that takes a `FiberTrace` object a
 >>> terminate = lambda trace: (np.fabs(trace.x) > 10**6).any()
 ```
 
-Alternatively there are also standard termination criteria such as maximum run time or maximum number of steps that can be specified later as key-word arguments.  In that case you can set `terminate = None`.
+Alternatively there are also standard termination criteria such as maximum run time or maximum number of steps that can be specified later as keyword arguments.  In that case you can set `terminate = None`.
 
 Lastly, you should define a `compute_step_amount` function, which computes a reasonable step size for the current numerical step along the fiber.  This function should take a `FiberTrace` object as input, and return two outputs: `step_amount`, the actual size of the step, and `step_data`, which can contain any additional step-related data of interest and will be saved for your post-traversal analysis.  In the simplest case, you can return a small constant step size and no additional data:
 
@@ -82,22 +82,28 @@ Finally, you can now run the solver:
 ... ef,
 ... Df,
 ... compute_step_amount,
-... N=N,
+... v = np.zeros((N,1)),
 ... terminate=terminate,
 ... max_traverse_steps=10**3,
+... max_solve_iterations=2**5,
 ... )
 ```
 
-Candidate fixed points can be post-processed by removing duplicates and points that are not quite fixed.  For this you must define a `duplicates` function that determines when two points should be considered duplicates.  `duplicates` should take two inputs: an NxK matrix `V` and Nx1 vector `v`.  It should return one output, a length N boolean array whose k^th element is `True` if `V[:,[k]] and `v` should be considered duplicates:
+Candidate solutions can be sanitized by removing duplicates and points that are not quite fixed.  For this you must define a `duplicates` function that determines when two points should be considered duplicates.  `duplicates` should take two inputs: an NxK matrix `U` and Nx1 vector `v`.  It should return one output, a length N boolean array whose k^th element is `True` if `U[:,[k]]` and `v` should be considered duplicates:
+
+```python
+>>> duplicates = lambda U, v: (np.fabs(U - v) < 2**-21).all(axis=0)
+```
+
+With `duplicates` defined you can sanitize the solution:
 
 ```python
 >>> import dfibers.fixed_points as fx
->>> duplicates = lambda V, v: (np.fabs(V - v) < 2**-21).all(axis=0)
 >>> V = solution["Fixed points"]
 >>> V = fx.sanitize_points(V, f, ef, Df, duplicates)
 ```
 
-Inspect the solutions:
+And inspect the sanitized solution:
 
 ```python
 >>> print("Fixed points:")
