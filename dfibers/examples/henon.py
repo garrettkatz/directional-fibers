@@ -61,13 +61,13 @@ if __name__ == "__main__":
 
     # Run in one direction
     solution = sv.fiber_solver(**fiber_kwargs)
-    V1 = solution["Fiber"]["X"][:-1,:]
-    z = solution["Fiber"]["z"]
+    V1 = np.concatenate(solution["Fiber trace"].points, axis=1)[:-1,:]
+    z = solution["Fiber trace"].z_initial
     
     # Run in other direction (negate initial tangent)
     fiber_kwargs["z"] = -z
     solution = sv.fiber_solver(**fiber_kwargs)
-    V2 = solution["Fiber"]["X"][:-1,:]
+    V2 = np.concatenate(solution["Fiber trace"].points, axis=1)[:-1,:]
 
     # Join fiber segments
     V = np.concatenate((np.fliplr(V1), V2), axis=1)

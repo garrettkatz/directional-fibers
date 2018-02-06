@@ -92,7 +92,7 @@ def fiber_solver(
     Fixed point location using directional fibers.
     All parameters are as described in directional_fibers.traverse_fiber().
     Returns solution, a dictionary with keys
-        "Fiber": the result of traverse_fiber()
+        "Fiber trace": the result of traverse_fiber()
         "Fixed points": an array with one fixed point per column
         "Refinements": a list of local traverse_fiber results, one per fixed point
         "Fixed index": an array of fixed point candidate indices in the fiber
@@ -117,11 +117,11 @@ def fiber_solver(
     )
     
     # Keep final direction vector in case random default was used (in theory shouldn't matter)
-    c = fiber_result["c"]
+    c = fiber_result.c
 
     # Extract candidate fixed points: endpoints, local |alpha| minimum, alpha sign change
     # As well as immediate neighbors for close pairs of fixed points and added redundancy
-    X = fiber_result["X"]
+    X = np.concatenate(fiber_result.points, axis=1)
     a = X[-1,:]
     fixed_index = np.zeros(len(a), dtype=bool)
     # endpoints
@@ -164,11 +164,11 @@ def fiber_solver(
             solve_tolerance=solve_tolerance,
         )
         refinement_results.append(refinement_result)
-        fixed_points.append(refinement_result["X"][:-1,[-1]].copy())
+        fixed_points.append(refinement_result.points[-1][:-1,:].copy())
     
     # Return output
     solution = {
-        "Fiber": fiber_result,
+        "Fiber trace": fiber_result,
         "Fixed points": np.concatenate(fixed_points,axis=1),
         "Refinements": refinement_results,
         "Fixed index": np.flatnonzero(fixed_index),

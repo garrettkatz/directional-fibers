@@ -4,6 +4,32 @@ import numerical_utilities as nu
 import itertools as it
 import matplotlib.pyplot as plt
 
+class FiberTrace:
+    """
+    A record of fiber traversal.  Has fields:
+    status: "Terminated" | "Closed loop" | "Max steps" | "Timed out" | "Diverged"
+    c: direction vector as N x 1 np.array
+    x: current fiber point as (N+1) x 1 np.array
+    DF: current fiber Jacobian as N x (N+1) np.array
+    z: current fiber tangent vector as (N+1) x 1 np.array
+    z_initial: initial fiber tangent vector as (N+1) x 1 np.array
+    points[p]: the p^th fiber point as (N+1) x 1 np.array
+    residuals[p]: the p^th residual error as float
+    step_amounts[p]: the p^th step amount as float
+    step_data[p]: additional data for the p^th step (user defined)
+    """
+    def __init__(self, c):
+        self.status = "Traversing"
+        self.c = c
+        self.x = None
+        self.DF = None
+        self.z = None
+        self.z_initial = None
+        self.points = []
+        self.residuals = []
+        self.step_amounts = []
+        self.step_data = []
+
 def eF(x, c, f, ef):
     """
     Forward error in F(x)
@@ -65,19 +91,6 @@ def take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance
         x = x + nu.solve(Dg, delta_g)
     return x, residuals
 
-class FiberTrace(object):
-    def __init__(self, c):
-        self.status = "Traversing"
-        self.c = c
-        self.x = None
-        self.z = None
-        self.DF = None
-        self.points = []
-        self.tangents = []
-        self.residuals = []
-        self.step_sizes = []
-        self.step_data = []
-
 def traverse_fiber(
     f,
     Df,
@@ -97,13 +110,12 @@ def traverse_fiber(
 
     """
     Traverses a directional fiber.
-    All points/vectors represented as N x 1 or (N+1) x 1 numpy arrays
     Traversal state is maintained in a FiberTrace object
-    The user provides functions f(v), Df(v), ef(v) where v is N x 1
+    The user provides functions f(v), Df(v), ef(v) where v is an N x 1 np.array:
+        f is the function, Df is its derivative, and ef is its forward error.
     The user-provided function compute_step_amount(trace) should return:
         step_amount: signed step size at point x along fiber with derivative DF and tangent z
-        step_data: output for any additional data that is saved for post-traversal analysis
-    where trace is a FiberTrace object with fields including x, DF, and z
+        step_data: output for any additional data that will be saved for post-traversal analysis
 
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
@@ -123,14 +135,7 @@ def traverse_fiber(
     If provided, each step terminates after the Newton residual is within solve_tolerance.
     At least one of max_solve_iterations and solve_tolerance should be provided.
 
-    A dictionary with the following entries is returned:
-    "status": one of "Terminated", "Closed loop", "Max steps", "Timed out", "Diverged".
-    "X": X[:,n] is the n^{th} point along the fiber
-    "residuals": residuals[n] is the residual error after Newton's method at the n^{th} step
-    "step_amounts": step_amounts[n] is the size used for the n^{th} step
-    "step_datas": step_datas[n] is the step_data saved at the n^{th} step
-    "c": c is the direction vector that was used
-    "z": z is the initial tangent vector that was used
+    Returns the FiberTrace object for the traversal
     """
 
     # Set defaults
@@ -162,12 +167,11 @@ def traverse_fiber(
         
         # Update tangent
         z = compute_tangent(DF, z)
-        if step == 0: z_init = z
         
         # Update trace
-        trace.z = z
         trace.DF = DF
-        trace.tangents.append(z)
+        trace.z = z
+        if step == 0: trace.z_initial = z
 
         # Get step size
         step_amount, step_data = compute_step_amount(trace)
@@ -181,7 +185,7 @@ def traverse_fiber(
         trace.x = x
         trace.points.append(x)
         trace.residuals.append(step_residuals[-1])
-        trace.step_sizes.append(step_amount)
+        trace.step_amounts.append(step_amount)
         trace.step_data.append(step_data)
 
         # Check for early termination criteria
@@ -201,15 +205,7 @@ def traverse_fiber(
             break
         
     # final output
-    return {
-        "status": trace.status,
-        "X": np.concatenate(trace.points,axis=1),
-        "residuals": np.array(trace.residuals),
-        "step_amounts": np.array(trace.step_sizes),
-        "step_datas": trace.step_data,
-        "c": c,
-        "z": z_init,
-    }
+    return trace
 
 def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1):
     """

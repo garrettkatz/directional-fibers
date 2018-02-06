@@ -221,8 +221,8 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
                 )
                 
             print("max, len(X):")
-            print(max_traverse_steps, result["X"].shape[1])
-            self.assertTrue(result["X"].shape[1] <= max_traverse_steps+1)
+            print(max_traverse_steps, len(result.points))
+            self.assertTrue(len(result.points) <= max_traverse_steps+1)
         run_time = 2
         start_time = time.clock()
         result = tv.traverse_fiber(
@@ -253,7 +253,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             max_solve_iterations=self.max_solve_iterations,
             solve_tolerance=self.solve_tolerance,
             )
-        self.assertTrue(result["status"] == "Terminated")
+        self.assertTrue(result.status == "Terminated")
         result = tv.traverse_fiber(
             self.f,
             self.Df,
@@ -265,7 +265,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             max_solve_iterations=self.max_solve_iterations,
             solve_tolerance=self.solve_tolerance,
             )
-        self.assertTrue(result["status"] == "Terminated")
+        self.assertTrue(result.status == "Terminated")
 
     # @ut.skip("")
     def test_ef(self):
@@ -291,7 +291,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             max_solve_iterations=self.max_solve_iterations,
             solve_tolerance=self.solve_tolerance,
             )
-        X = result["X"]
+        X = np.concatenate(result.points,axis=1)
         V = X[:-1,:]
         C = self.f(V)
         self.assertTrue((np.fabs(X[[-1],:]*self.c - C) < 0.001).all())

@@ -198,8 +198,8 @@ if __name__ == "__main__":
     fxpts, solution = run_fiber_solver(W)
     
     # Extract steps along fiber and corresponding f(v)'s
-    fiber = solution["Fiber"]
-    X = fiber["X"]
+    trace = solution["Fiber trace"]
+    X = np.concatenate(trace.points, axis=1)
     X = np.concatenate((-np.fliplr(X), X), axis=1)
     V = X[:-1,:]
 

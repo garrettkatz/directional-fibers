@@ -1,9 +1,8 @@
 code:
-    change compute_step_amount and terminate signatures to operate on a "frame/cusp/apex/frontier/nose/nosecone/coma" with all information that could be pertinent (x, DF, z, c, numsteps, etc), even maybe all info so far, so ends up being most of return value ("traversal data"/trail)
-        FiberTrace
     numerical_utilities newton_solve
     clean up isfinite handling, more principled error handling
         more graceful error handling for critical directions (Baram email)
+    _ prefix for private functions
     optimize rosenbrock optimization and check on lork Df areas (is DF also?)
     fiber_bisolver, fiber_multisolver with symmetry="odd" argument
     for local and combo, smarter termination criteria (e.g., time since last new fixed point >= time to last new fixed point, after many points found)
@@ -16,7 +15,7 @@ code:
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples
         multivariate poly finite soln
-        1d: mackey-glass, population dynamics
+        1d: mackey-glass, population dynamics, volterra
         compare with various global solvers in scipy like basin hopping
     mayavi for 3d
 
