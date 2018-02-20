@@ -43,7 +43,7 @@ def local_solver(
     """
     seeds, updates, optima = [], [], []
     start = time.clock()
-    for repeat in it.count(1):
+    for repeat in it.count():
 
         # Check termination criteria
         if stop_time is not None and time.clock() >= stop_time: break
