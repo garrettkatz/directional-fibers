@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import dfibers.directional_fibers as df
+import dfibers.traversal as tv
 import dfibers.solvers as sv
 import dfibers.examples.rnn as rnn
 
@@ -32,9 +32,9 @@ solution = sv.fiber_solver(
     solve_tolerance=solve_tolerance,
     )
     
-fiber = solution["Fiber"]
-X = fiber["X"]
-z = fiber["z"]
+fiber = solution["Fiber trace"]
+X = np.concatenate(fiber.points,axis=1)
+z = fiber.z_initial
 print("%d steps"%X.shape[1])
 # X = np.concatenate((-np.fliplr(X), X), axis=1)
 V = X[:-1,:]
@@ -50,10 +50,12 @@ plt.plot([V[0,0], V[0,0]+z[0,0]],[V[1,0],V[1,0]+z[1,0]],'m-')
 
 
 for r in solution["Refinements"]:
-    plt.plot(r["X"][0,0], r["X"][1,0], 'go')
+    X = np.concatenate(r.points,axis=1)
+    plt.plot(X[0,0], X[1,0], 'go')
 
 for r in solution["Refinements"]:
-    plt.plot(r["X"][0,:], r["X"][1,:], 'g.-')
+    X = np.concatenate(r.points,axis=1)
+    plt.plot(X[0,:], X[1,:], 'g.-')
 
 V = solution["Fixed points"]
 plt.plot(V[0,:],V[1,:],'ro')

@@ -1,4 +1,5 @@
 import os
+import itertools as it
 import numpy as np
 import scipy.linalg as spl
 
@@ -52,81 +53,70 @@ def minimum_singular_value(A):
     # return np.linalg.svd(A, compute_uv=0)[-1] # called deep within a code branch of np.linalg.norm
     return np.sqrt(spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0]) # slightly faster
 
-# def newton_raphson(f, Df,):
-#     need finite check
-#     need solve iterations
-#     need to handle Df in stack form
-#     non-square matrices, mldivide vs solve
-#     switch to forward error instead of solve tolerance
-#     return residuals
-
-
-#     def refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance):
-#         residuals = []
-#         for i in it.count(1):
-#             v, a = x[:-1,:], x[-1]
-#             F = f(v) - a*c
-#             residuals.append(np.fabs(F).max())
-#             if not np.isfinite(F).all(): break
-#             if (np.fabs(F) < solve_tolerance).all(): break
-#             DF = np.concatenate((Df(v), -c), axis=1)
-#             x = x - nu.mldivide(DF, F)
-#             if i == max_solve_iterations: break
-#         return x, residuals
-    
-#     def take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance):
-#         N = c.shape[0]
-#         x0 = x
-#         x = x + z*step_amount # fast first step
-#         delta_g = np.zeros((N+1,1))
-#         Dg = np.zeros((N+1,N+1))
-#         Dg[:N,[N]] = -c
-#         Dg[[N],:] = z.T
-#         residuals = []
-#         for iteration in it.count(1):
-#             v, a = x[:-1,:], x[-1]
-#             delta_g[:N,:] = -(f(v) - a*c)
-#             delta_g[N,:] = step_amount - z.T.dot(x - x0)
-#             residuals.append(np.fabs(delta_g).max())
-#             if iteration >= max_solve_iterations: break
-#             if (np.fabs(delta_g) < solve_tolerance).all(): break
-#             Dg[:N,:N] = Df(v)
-#             x = x + nu.solve(Dg, delta_g)
-#         return x, residuals
-
-#     def refine_points(V, f, ef, Df, max_iters=2**5, batch_size=100):
-#         """
-#         Refine candidate fixed points with Newton-Raphson iterations
-#         V: (N,P)-ndarray, one candidate point per column
-#         f, ef: as in is_fixed
-#         Df(V)[p,:,:]: derivative of f(V[:,p])
-#         max_iters: maximum Newton-Raphson iterations performed
-#         batch_size: at most this many points solved for at a time (limits memory usage)
-#         returns (V, fixed) where
-#             V[:,p] is the p^th point after refinement
-#             fixed[p] is True if the p^th point is fixed
-#         """
-    
-#         # Split points into batches
-#         num_splits = int(np.ceil(float(V.shape[1])/batch_size))
-#         point_batches = np.array_split(V, num_splits, axis=1)
-#         fixed_batches = []
-    
-#         for b in range(num_splits):
-    
-#             # Refine current batch with Newton-Raphson
-#             points = point_batches[b]
-#             fixed = np.zeros(points.shape[1], dtype=bool)
-#             for i in range(max_iters):
-#                 B = points[:,~fixed]
-#                 DfB = Df(B)
-#                 if len(DfB.shape)==2: DfB = DfB[np.newaxis,:,:]
-#                 B = B - nu.solve(DfB, f(B).T).T
-#                 points[:,~fixed] = B
-#                 fixed[~fixed], _ = is_fixed(B, f, ef)
-#                 if fixed.all(): break
-#             point_batches[b] = points
-#             fixed_batches.append(fixed)
-    
-#         # Format output
-#         return np.concatenate(point_batches, axis=1), np.concatenate(fixed_batches)
+def nr_solve(x, f, Df, ef, max_iterations=None):
+    """
+    Run Newton-Raphson iterations to solve f(x) = 0
+    Inputs:
+        x: an initial seed
+        f: a function handle to the function f
+        Df: a function handle computing the derivative of f
+        ef: a function handle computing the forward error of f
+        max_iterations: optional maximum number of iterations
+    Returns:
+        x: the final solution point
+        points[i]: x at the i^th iteration
+        residuals[i]: residual error at the i^th iteration
+    """
+    points = []
+    residuals = []
+    for i in it.count():
+        fx = f(x)
+        efx = ef(x)
+        points.append(x)
+        residuals.append(np.fabs(fx).max())
+        if i == max_iterations or not np.isfinite(fx).all(): break
+        if (np.fabs(fx) < efx).all(): break
+        Dfx = Df(x)
+        if fx.shape[0] < x.shape[0]:
+            x = x - mldivide(Dfx, fx)
+        if fx.shape[0] > x.shape[0]:
+            x = x - mrdivide(Dfx, fx)
+        if fx.shape[0] == x.shape[0]:
+            x = x - solve(Dfx, fx)
+    return x, points, residuals
+        
+def nr_solves(X, f, Df, ef, max_iterations=None):
+    """
+    Run Newton-Raphson iterations in parallel to solve multiple f(x) = 0
+    Inputs:
+        X[:,p]: the p^th initial seed
+        f: a function handle to the function f
+        Df: a function handle computing the derivative of f
+            Df(X)[p,:,:] is the derivative of the p^th point
+        ef: a function handle computing the forward error of f
+        max_iterations: optional maximum number of iterations
+    Returns:
+        X: the final solution points
+        done[i]: True iff the i^th point converged
+        points[i]: X at the i^th iteration
+        residuals[i]: maximum residual error at the i^th iteration
+    """
+    points = []
+    residuals = []
+    done = np.zeros(X.shape[1], dtype=bool)
+    for i in it.count():
+        fx = f(X[:,~done])
+        efx = ef(X[:,~done])
+        points.append(X)
+        residuals.append(np.fabs(fx).max())
+        if i == max_iterations or not np.isfinite(fx).all(): break
+        done_now = (np.fabs(fx) < efx).all(axis=0)
+        done[~done] = done_now
+        if done_now.all(): break
+        Dfx = Df(X[:,~done])
+        fx = fx[:,~done_now]
+        if fx.shape[1] > 1:
+            X[:,~done] = X[:,~done] - solve(Dfx, fx.T).T
+        else:
+            X[:,~done] = X[:,~done] - solve(Dfx, fx)
+    return X, done, points, residuals

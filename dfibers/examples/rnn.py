@@ -21,6 +21,7 @@ def Df_factory(W):
     For a given weight matrix W, returns the function Df,
     where Df(V) is the derivative of f(V)
     if V has more than one column, Df(V)[p,:,:] is the derivative at the p^th one
+    otherwise Df(V)[:,:] is the derivative at V
     """
     I = np.eye(W.shape[0])
     def Df(V):

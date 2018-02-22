@@ -102,6 +102,7 @@ def fiber_solver(
     fiber_result = tv.traverse_fiber(
         f,
         Df,
+        ef,
         compute_step_amount,
         v=v,
         c=c,
@@ -152,6 +153,7 @@ def fiber_solver(
         refinement_result = tv.traverse_fiber(
             f,
             Df,
+            ef,
             compute_refine_step_amount,
             v=X[:-1,[i]].copy(),
             c=c,

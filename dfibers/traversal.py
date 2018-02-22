@@ -26,6 +26,7 @@ class FiberTrace:
         self.z = None
         self.z_initial = None
         self.points = []
+        self.tangents = []
         self.residuals = []
         self.step_amounts = []
         self.step_data = []
@@ -40,17 +41,12 @@ def eF(x, c, f, ef):
     error = nu.eps(f(v) - a*c) + ef(v) + nu.eps(a*c) + nu.eps(a)*c
     return error
 
-def refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance):
-    residuals = []
-    for i in it.count(1):
-        v, a = x[:-1,:], x[-1]
-        F = f(v) - a*c
-        residuals.append(np.fabs(F).max())
-        if not np.isfinite(F).all(): break
-        if (np.fabs(F) < solve_tolerance).all(): break
-        DF = np.concatenate((Df(v), -c), axis=1)
-        x = x - nu.mldivide(DF, F)
-        if i == max_solve_iterations: break
+def refine_initial(f, Df, ef, x, c, max_solve_iterations):
+    x, _, residuals = nu.nr_solve(x,
+        f = lambda x: f(x[:-1]) - x[-1]*c,
+        Df = lambda x: np.concatenate((Df(x[:-1]), -c), axis=1),
+        ef = lambda x: eF(x, c, f, ef),
+        max_iterations=max_solve_iterations)
     return x, residuals
 
 def compute_tangent(DF, z=None):
@@ -71,29 +67,46 @@ def compute_tangent(DF, z=None):
         z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
-def take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance):
-    N = c.shape[0]
+def take_step(f, Df, ef, c, z, x, step_amount, max_solve_iterations):
     x0 = x
-    x = x + z*step_amount # fast first step
-    delta_g = np.zeros((N+1,1))
-    Dg = np.zeros((N+1,N+1))
-    Dg[:N,[N]] = -c
-    Dg[[N],:] = z.T
-    residuals = []
-    for iteration in it.count(1):
-        v, a = x[:-1,:], x[-1]
-        delta_g[:N,:] = -(f(v) - a*c)
-        delta_g[N,:] = step_amount - z.T.dot(x - x0)
-        residuals.append(np.fabs(delta_g).max())
-        if iteration >= max_solve_iterations: break
-        if (np.fabs(delta_g) < solve_tolerance).all(): break
-        Dg[:N,:N] = Df(v)
-        x = x + nu.solve(Dg, delta_g)
+    x, _, residuals = nu.nr_solve(
+        x0 + z*step_amount, # fast first step
+        f = lambda x: np.concatenate((
+            f(x[:-1]) - x[-1]*c,
+            z.T.dot(x - x0) - step_amount), axis=0),
+        Df = lambda x: np.concatenate((
+            np.concatenate((Df(x[:-1]), -c), axis=1),
+            z.T), axis=0),
+        ef = lambda x: np.concatenate((
+            eF(x, c, f, ef),
+            nu.eps(z.T.dot(x)) + z.T.dot(nu.eps(x)) + nu.eps(z*x).sum()),
+            axis = 0),
+        max_iterations=max_solve_iterations)
     return x, residuals
+
+    # N = c.shape[0]
+    # x0 = x
+    # x = x + z*step_amount # fast first step
+    # delta_g = np.zeros((N+1,1))
+    # Dg = np.zeros((N+1,N+1))
+    # Dg[:N,[N]] = -c
+    # Dg[[N],:] = z.T
+    # residuals = []
+    # for iteration in it.count(1):
+    #     v, a = x[:-1,:], x[-1]
+    #     delta_g[:N,:] = -(f(v) - a*c)
+    #     delta_g[N,:] = step_amount - z.T.dot(x - x0)
+    #     residuals.append(np.fabs(delta_g).max())
+    #     if iteration >= max_solve_iterations: break
+    #     if (np.fabs(delta_g) < solve_tolerance).all(): break
+    #     Dg[:N,:N] = Df(v)
+    #     x = x + nu.solve(Dg, delta_g)
+    # return x, residuals
 
 def traverse_fiber(
     f,
     Df,
+    ef,
     compute_step_amount,
     v=None,
     c=None,
@@ -151,7 +164,7 @@ def traverse_fiber(
 
 
     # Drive initial va to fiber in case of residual error
-    x, initial_residuals = refine_initial(f, Df, x, c, max_solve_iterations, solve_tolerance)
+    x, initial_residuals = refine_initial(f, Df, ef, x, c, max_solve_iterations)
     
     # Initialize trace
     trace = FiberTrace(c)
@@ -179,11 +192,13 @@ def traverse_fiber(
             step_amount = np.sign(step_amount)*min(np.fabs(step_amount), max_step_size)
                
         # Update x
-        x, step_residuals = take_step(f, Df, c, z, x, step_amount, max_solve_iterations, solve_tolerance)
+        x, step_residuals = take_step(f, Df, ef, c, z, x,
+            step_amount, max_solve_iterations)
 
         # Store progress
         trace.x = x
         trace.points.append(x)
+        trace.tangents.append(z)
         trace.residuals.append(step_residuals[-1])
         trace.step_amounts.append(step_amount)
         trace.step_data.append(step_data)
