@@ -27,6 +27,7 @@ experiments:
     how often is there single c to rule them all?
         keep sampling fibers until one finds all fixed points - both known by construction, and found by previous samples
             stronger if you use existing global solvers for ground truth
+            NASA "kodiak" solver might work: https://github.com/nasa/Kodiak
         statistics on # points in fibers (not so different from last paper)
         patterns determining single c?
         patterns bounding min fiber svd?
