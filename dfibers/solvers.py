@@ -117,21 +117,24 @@ def fiber_solver(
         solve_tolerance=solve_tolerance,
     )
     
-    # Keep final direction vector in case random default was used (in theory shouldn't matter)
+    # Keep final direction vector if random default (in theory shouldn't matter)
     c = fiber_result.c
 
-    # Extract candidate fixed points: endpoints, local |alpha| minimum, alpha sign change
-    # As well as immediate neighbors for close pairs of fixed points and added redundancy
+    # Extract candidate fixed points:
+    # endpoints, local |alpha| minimum, alpha sign change
+    # immediate neighbors for close pairs of fixed points and added redundancy
     X = np.concatenate(fiber_result.points, axis=1)
     a = X[-1,:]
     fixed_index = np.zeros(len(a), dtype=bool)
     # endpoints
     fixed_index[[0, -1]] = True
     # local magnitude minima
-    fixed_index[1:-1] |= (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
+    fixed_index[1:-1] |=
+        (np.fabs(a[1:-1]) <= np.fabs(a[2:])) &
+        (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
     # sign changes
     fixed_index[:-1] |= np.sign(a[:-1]) != np.sign(a[1:])
-    # extra redundancy with neighbors
+    # extra redundancy with neighbors (don't combine |= with numpy views)
     fixed_index[:-1] = np.logical_or(fixed_index[:-1], fixed_index[1:])
     fixed_index[1:] = np.logical_or(fixed_index[1:], fixed_index[:-1])
 
@@ -139,11 +142,13 @@ def fiber_solver(
     def compute_refine_step_amount(trace):
         refine_step_amount = -trace.x[-1,0]/trace.z[-1,0]
         fiber_step_amount, fiber_step_data = compute_step_amount(trace)
-        step_amount = np.sign(refine_step_amount)*min(np.fabs(refine_step_amount), fiber_step_amount)
+        step_amount = np.sign(refine_step_amount)*min(
+            np.fabs(refine_step_amount), fiber_step_amount)
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
     if terminate is None: terminate = lambda x: False
-    refine_terminate = lambda trace: fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
+    refine_terminate = lambda trace:
+        fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
 
     # Run within-fiber Newton-Raphson at each candidate
     X = X[:, fixed_index]
@@ -176,3 +181,4 @@ def fiber_solver(
         "Fixed index": np.flatnonzero(fixed_index),
     }
     return solution
+
