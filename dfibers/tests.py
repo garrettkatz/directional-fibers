@@ -147,12 +147,12 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
     def test_update_tangent(self):
         x, _ = tv.refine_initial(
             self.f, self.Df, self.ef, self.x, self.c, self.max_solve_iterations)
-        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
+        DF = np.concatenate((self.Df(x[:self.N])[0], -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
         
         x = x + 0.001*z
-        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
+        DF = np.concatenate((self.Df(x[:self.N])[0], -self.c), axis=1)
         z_new = tv.compute_tangent(DF, z)
         
         # if VERBOSE: print("Test update tangent:")
@@ -166,7 +166,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
     def test_compute_step_amount_size(self):
         x, _ = tv.refine_initial(
             self.f, self.Df, self.ef, self.x, self.c, self.max_solve_iterations)
-        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
+        DF = np.concatenate((self.Df(x[:self.N])[0], -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
 
@@ -183,7 +183,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
     def test_take_step(self):
         x, _ = tv.refine_initial(
             self.f, self.Df, self.ef, self.x, self.c, self.max_solve_iterations)
-        DF = np.concatenate((self.Df(x[:self.N,:]), -self.c), axis=1)
+        DF = np.concatenate((self.Df(x[:self.N])[0], -self.c), axis=1)
         _,_,z = np.linalg.svd(DF)
         z = z[[self.N],:].T
         

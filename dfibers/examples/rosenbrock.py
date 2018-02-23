@@ -26,10 +26,10 @@ def ef(v):
     return 0.001*np.ones((2,1))
 
 def Df(v):
-    return np.array([
-        [2 - 4*b*(v[1,0]-3*v[0,0]**2), -4*b*v[0,0]],
-        [-4*b*v[0,0], 2*b],
-    ])
+    Dfv = np.empty((v.shape[1],2,2))
+    Dfv[:,0,0], Dfv[:,0,1] = 2 - 4*b*(v[1]-3*v[0]**2), -4*b*v[0]
+    Dfv[:,1,0], Dfv[:,1,1] = -4*b*v[0], 2*b
+    return Dfv
 
 if __name__ == "__main__":
 

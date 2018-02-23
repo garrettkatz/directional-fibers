@@ -26,7 +26,9 @@ def Df_factory(T, L, R, I, C):
     """
     def Df(V):
         D = (2/np.pi)*np.pi*L/2/(1 + (np.pi*L*V/2)**2)
-        return np.diagflat(C**-1).dot((T.dot(np.diagflat(D)) - np.diagflat(R**-1)))
+        return (
+            np.diagflat(C**-1).dot((T.dot(np.diagflat(D)) - np.diagflat(R**-1)))
+        )[np.newaxis,:,:] # todo stack of multiple Dfv
     return Df
 
 def ef_factory(T, L, R, I, C):

@@ -32,11 +32,11 @@ def ef(v):
     return 0.001*np.ones((N,1))
 
 def Df(v):
-    return np.array([
-        [-s, s, 0],
-        [r-v[2,0], -1, -v[0,0]],
-        [v[1,0], v[0,0], -b],
-    ])
+    Dfv = np.empty((v.shape[1],3,3))
+    Dfv[:,0,0], Dfv[:,0,1], Dfv[:,0,2] = -s, s, 0
+    Dfv[:,1,0], Dfv[:,1,1], Dfv[:,1,2] = r - v[2], -1, -v[0]
+    Dfv[:,2,0], Dfv[:,2,1], Dfv[:,2,2] = v[1], v[0], -b
+    return Dfv
 
 if __name__ == "__main__":
 

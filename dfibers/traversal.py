@@ -44,7 +44,7 @@ def eF(x, c, f, ef):
 def refine_initial(f, Df, ef, x, c, max_solve_iterations):
     x, _, residuals = nu.nr_solve(x,
         f = lambda x: f(x[:-1]) - x[-1]*c,
-        Df = lambda x: np.concatenate((Df(x[:-1]), -c), axis=1),
+        Df = lambda x: np.concatenate((Df(x[:-1])[0], -c), axis=1),
         ef = lambda x: eF(x, c, f, ef),
         max_iterations=max_solve_iterations)
     return x, residuals
@@ -75,7 +75,7 @@ def take_step(f, Df, ef, c, z, x, step_amount, max_solve_iterations):
             f(x[:-1]) - x[-1]*c,
             z.T.dot(x - x0) - step_amount), axis=0),
         Df = lambda x: np.concatenate((
-            np.concatenate((Df(x[:-1]), -c), axis=1),
+            np.concatenate((Df(x[:-1])[0], -c), axis=1),
             z.T), axis=0),
         ef = lambda x: np.concatenate((
             eF(x, c, f, ef),
@@ -83,25 +83,6 @@ def take_step(f, Df, ef, c, z, x, step_amount, max_solve_iterations):
             axis = 0),
         max_iterations=max_solve_iterations)
     return x, residuals
-
-    # N = c.shape[0]
-    # x0 = x
-    # x = x + z*step_amount # fast first step
-    # delta_g = np.zeros((N+1,1))
-    # Dg = np.zeros((N+1,N+1))
-    # Dg[:N,[N]] = -c
-    # Dg[[N],:] = z.T
-    # residuals = []
-    # for iteration in it.count(1):
-    #     v, a = x[:-1,:], x[-1]
-    #     delta_g[:N,:] = -(f(v) - a*c)
-    #     delta_g[N,:] = step_amount - z.T.dot(x - x0)
-    #     residuals.append(np.fabs(delta_g).max())
-    #     if iteration >= max_solve_iterations: break
-    #     if (np.fabs(delta_g) < solve_tolerance).all(): break
-    #     Dg[:N,:N] = Df(v)
-    #     x = x + nu.solve(Dg, delta_g)
-    # return x, residuals
 
 def traverse_fiber(
     f,
@@ -176,7 +157,7 @@ def traverse_fiber(
     for step in it.count(0):
 
         # Update DF
-        DF = np.concatenate((Df(x[:N,:]), -c), axis=1)
+        DF = np.concatenate((Df(x[:N])[0], -c), axis=1)
         
         # Update tangent
         z = compute_tangent(DF, z)

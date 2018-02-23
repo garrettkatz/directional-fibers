@@ -19,15 +19,12 @@ def f_factory(W):
 def Df_factory(W):
     """
     For a given weight matrix W, returns the function Df,
-    where Df(V) is the derivative of f(V)
-    if V has more than one column, Df(V)[p,:,:] is the derivative at the p^th one
-    otherwise Df(V)[:,:] is the derivative at V
+    where Df(V)[p,:,:] is the Jacobian of f at V[:,[p]]
     """
     I = np.eye(W.shape[0])
     def Df(V):
         D = 1-np.tanh(W.dot(V))**2
-        if V.shape[1] == 1: return D*W - I
-        else: return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
+        return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
     return Df
 
 def ef_factory(W):
@@ -77,7 +74,7 @@ def qg_factory(W):
             q: the objective |f|^2 at v (a scalar)
             g: the gradient of q at v (a flat numpy array)
         """
-        fv, Dfv = f(v[:,np.newaxis]), Df(v[:,np.newaxis])
+        fv, Dfv = f(v[:,np.newaxis]), Df(v[:,np.newaxis])[0]
         q, g = (fv**2).sum(), Dfv.T.dot(fv).flatten()
         return q, g
     return qg
@@ -94,7 +91,7 @@ def H_factory(W):
         """
         Calculates the Hessian of |f|^2 at v
         """
-        Dfv = Df(v[:,np.newaxis])
+        Dfv = Df(v[:,np.newaxis])[0]
         return Dfv.T.dot(Dfv)
     return H
 

@@ -39,19 +39,21 @@ def solve(A, B):
     If A is a KxNxN stack of matrices, B should be KxN.
     """
     signature = 'dd->d'
-    extobj = np.linalg.linalg.get_linalg_error_extobj(np.linalg.linalg._raise_linalgerror_singular)
+    extobj = np.linalg.linalg.get_linalg_error_extobj(
+        np.linalg.linalg._raise_linalgerror_singular)
     if B.ndim == A.ndim - 1:
-        return np.linalg.linalg._umath_linalg.solve1(A, B, signature=signature, extobj=extobj)
+        return np.linalg.linalg._umath_linalg.solve1(
+            A, B, signature=signature, extobj=extobj)
     else:
-        return np.linalg.linalg._umath_linalg.solve(A, B, signature=signature, extobj=extobj)
+        return np.linalg.linalg._umath_linalg.solve(
+            A, B, signature=signature, extobj=extobj)
 
 def minimum_singular_value(A):
     """
     Returns the minimum singular value of numpy.array A
     """
-    # return np.linalg.norm(A, ord=-2)
-    # return np.linalg.svd(A, compute_uv=0)[-1] # called deep within a code branch of np.linalg.norm
-    return np.sqrt(spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0]) # slightly faster
+    # slightly faster than np.linalg.norm/svd:
+    return np.sqrt(spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0])
 
 def nr_solve(x, f, Df, ef, max_iterations=None):
     """
@@ -59,7 +61,8 @@ def nr_solve(x, f, Df, ef, max_iterations=None):
     Inputs:
         x: an initial seed
         f: a function handle to the function f
-        Df: a function handle computing the derivative of f
+        Df: a function handle computing the Jacobian of f
+            Df(x)[:,:] is the Jacobian of f at x
         ef: a function handle computing the forward error of f
         max_iterations: optional maximum number of iterations
     Returns:
@@ -87,7 +90,7 @@ def nr_solve(x, f, Df, ef, max_iterations=None):
         
 def nr_solves(X, f, Df, ef, max_iterations=None):
     """
-    Run Newton-Raphson iterations in parallel to solve multiple f(x) = 0
+    Solve multiple f(x) = 0 simultaneously with Newton-Raphson iterations
     Inputs:
         X[:,p]: the p^th initial seed
         f: a function handle to the function f
@@ -115,8 +118,5 @@ def nr_solves(X, f, Df, ef, max_iterations=None):
         if done_now.all(): break
         Dfx = Df(X[:,~done])
         fx = fx[:,~done_now]
-        if fx.shape[1] > 1:
-            X[:,~done] = X[:,~done] - solve(Dfx, fx.T).T
-        else:
-            X[:,~done] = X[:,~done] - solve(Dfx, fx)
+        X[:,~done] = X[:,~done] - solve(Dfx, fx.T).T
     return X, done, points, residuals

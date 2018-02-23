@@ -44,30 +44,6 @@ def refine_points(V, f, ef, Df, max_iters=2**5, batch_size=100):
     # Format output
     return np.concatenate(point_batches, axis=1), np.concatenate(fixed_batches)
 
-    # # Split points into batches
-    # num_splits = int(np.ceil(float(V.shape[1])/batch_size))
-    # point_batches = np.array_split(V, num_splits, axis=1)
-    # fixed_batches = []
-
-    # for b in range(num_splits):
-
-    #     # Refine current batch with Newton-Raphson
-    #     points = point_batches[b]
-    #     fixed = np.zeros(points.shape[1], dtype=bool)
-    #     for i in range(max_iters):
-    #         B = points[:,~fixed]
-    #         DfB = Df(B)
-    #         if len(DfB.shape)==2: DfB = DfB[np.newaxis,:,:]
-    #         B = B - nu.solve(DfB, f(B).T).T
-    #         points[:,~fixed] = B
-    #         fixed[~fixed], _ = is_fixed(B, f, ef)
-    #         if fixed.all(): break
-    #     point_batches[b] = points
-    #     fixed_batches.append(fixed)
-
-    # # Format output
-    # return np.concatenate(point_batches, axis=1), np.concatenate(fixed_batches)
-
 def get_connected_components(V, E):
     """
     Find all connected components in an undirected unweighted graph.
