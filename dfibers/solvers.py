@@ -129,9 +129,7 @@ def fiber_solver(
     # endpoints
     fixed_index[[0, -1]] = True
     # local magnitude minima
-    fixed_index[1:-1] |=
-        (np.fabs(a[1:-1]) <= np.fabs(a[2:])) &
-        (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
+    fixed_index[1:-1] |= (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
     # sign changes
     fixed_index[:-1] |= np.sign(a[:-1]) != np.sign(a[1:])
     # extra redundancy with neighbors (don't combine |= with numpy views)
@@ -147,8 +145,7 @@ def fiber_solver(
         step_data = (refine_step_amount, fiber_step_amount, fiber_step_data)
         return step_amount, step_data
     if terminate is None: terminate = lambda x: False
-    refine_terminate = lambda trace:
-        fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
+    refine_terminate = lambda trace: fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
 
     # Run within-fiber Newton-Raphson at each candidate
     X = X[:, fixed_index]
