@@ -15,6 +15,8 @@ code:
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples
+        many at https://www.sfu.ca/~ssurjano/optimization.html
+        Schwefel function
         multivariate poly finite soln
         1d: mackey-glass, population dynamics, volterra
         compare with various global solvers in scipy like basin hopping
