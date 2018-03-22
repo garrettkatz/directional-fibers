@@ -1,4 +1,6 @@
 code:
+    jim:
+        experiment whether cts relaxation has same fxpts as discrete
     multisolver
         handles oddness, closed loops, and disconnected components
         oddness gets shortcut:
