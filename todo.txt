@@ -1,3 +1,6 @@
+baram idea:
+    points outside the W span should have update vectors that drop them rapidly towards the W span.  So maybe c that are within the span are more statistically likely to connect the origin with the non-spurious?  or even if they're negatively correlated, some sort of connection?
+    
 code:
     jim:
         experiment whether cts relaxation has same fxpts as discrete
