@@ -47,10 +47,11 @@ if __name__ == "__main__":
         v = 2*np.random.rand(N,1) - 1
         V = si.odeint(lambda v, t: f(v.reshape((N,1))).flatten(), v.flatten(), t)
         attractor.append(V.T)
-    
+
     # Set up fiber arguments
     v = np.zeros((N,1))
-    c = np.random.randn(N,1)
+    # c = np.random.randn(N,1)
+    c = np.array([[0.93288993, -0.13089137, -0.23625363]]).T
     fiber_kwargs = {
         "f": f,
         "ef": ef,
@@ -64,33 +65,46 @@ if __name__ == "__main__":
         "max_solve_iterations": 2**5,
         "solve_tolerance": 10**-10,
     }
+    print("using c:")
+    print(c.T)
 
-    # Run in one direction
-    solution = sv.fiber_solver(**fiber_kwargs)
-    V1 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
-    z = solution["Fiber trace"].z_initial
-    
-    # Run in other direction (negate initial tangent)
-    fiber_kwargs["z"] = -z
-    solution = sv.fiber_solver(**fiber_kwargs)
-    V2 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
-
-    # Join fiber segments
-    V = np.concatenate((np.fliplr(V1), V2), axis=1)
-    V = V[:,::50]
-    C = f(V)
-
-    # Visualize fiber and strange attractor
+    # Visualize strange attractor
     ax = pt.gca(projection="3d")
-    ax.plot(*V, color='black', linestyle='-')
-    ax.quiver(*np.concatenate((V,.1*C),axis=0),color='black')
     for a in attractor:
         ax.plot(*a, color='gray', linestyle='-', alpha=0.5)
     br1 = np.sqrt(b*(r-1))
     U = np.array([[0, 0, 0],[br1,br1,r-1],[-br1,-br1,r-1]]).T
     ax.scatter(*U, color='black')
+
+    # Run and visualize fiber components, for each fxpt
+    for fc in range(U.shape[1]):
+
+        # start from current fxpt
+        fiber_kwargs["v"] = U[:,[fc]]
+
+        # Run in one direction
+        solution = sv.fiber_solver(**fiber_kwargs)
+        V1 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
+        z = solution["Fiber trace"].z_initial
+        # Run in other direction (negate initial tangent)
+        fiber_kwargs["z"] = -z
+        solution = sv.fiber_solver(**fiber_kwargs)
+        V2 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
     
+        # Join fiber segments
+        V = np.concatenate((np.fliplr(V1), V2), axis=1)
+        V = V[:,::50]
+        V = V[:,V[1,:] > -30] # respect axis limits
+        C = f(V)
+
+        # Visualize fiber
+        ax.plot(*V, color='black', linestyle='-')
+        ax.quiver(*np.concatenate((V,.1*C),axis=0),color='black')
+
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
+    ax.set_ylim([-30,30])
+    ax.view_init(elev=30,azim=-10)
+    pt.tight_layout()
     pt.show()
