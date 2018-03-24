@@ -62,25 +62,30 @@ if __name__ == "__main__":
     V = np.concatenate((np.fliplr(V1), V2), axis=1)
 
     # Grids for fiber and surface
-    X_fiber, Y_fiber = np.mgrid[-3:4:40j, -1:4:40j]
-    X_surface, Y_surface = np.mgrid[-3:4:100j, -1:4:100j]
+    X_fiber, Y_fiber = np.mgrid[-2.5:3.5:40j, -1:4:40j]
+    X_surface, Y_surface = np.mgrid[-2.5:3.5:100j, -1:4:100j]
 
     # Low rank Df curve
-    x_lork = np.linspace(-3,4,40)
+    x_lork = np.linspace(-2.5,3.5,40)
     y_lork = (2 + (12-8*b)*x_lork**2)/(4*b)
 
     # Compute rosenbrock
     R = (a - X_surface)**2 + b*(Y_surface - X_surface**2)**2
 
     # Visualize fiber and surface
-    ax_fiber = pt.subplot(1,2,1)
+    ax_fiber = pt.subplot(2,1,2)
     tv.plot_fiber(X_fiber, Y_fiber, V, f, ax=ax_fiber, scale_XY=500, scale_V=25)
     ax_fiber.plot([1],[1],'ko') # global optimum
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points
-    ax_surface = pt.gcf().add_subplot(1,2,2,projection="3d")
+    ax_surface = pt.gcf().add_subplot(2,1,1,projection="3d")
     ax_surface.plot_surface(X_surface, Y_surface, R, linewidth=0, antialiased=False, color='gray')
     ax_surface.view_init(azim=-98, elev=21)
     for ax in [ax_fiber, ax_surface]:
         ax.set_xlabel("x")
         ax.set_ylabel("y")
+        if ax == ax_surface:
+            ax.set_zlabel("R(x,y)", rotation=90)
+            ax.set_zlim([0,1000])
+            ax.view_init(elev=40,azim=-106)
+        ax.set_xlim([-2.5,3.5])
     pt.show()
