@@ -71,7 +71,8 @@ if __name__ == "__main__":
 
     # Join fiber segments
     V = np.concatenate((np.fliplr(V1), V2), axis=1)
-    V = V[:,:]
+    V = V[:,np.isfinite(V).all(axis=0)]
+    V = V[:,(np.fabs(V) < 3).all(axis=0)]
 
     # Low rank Df curve
     x_lork = (b+1)/(-2*a)*np.ones(2)
@@ -89,10 +90,12 @@ if __name__ == "__main__":
     V_a = np.array([X_a.flatten(), Y_a.flatten()])
     for u in range(11):
         V_a = V_a + f(V_a)
+    V_a = V_a[:,np.isfinite(V_a).all(axis=0)]
+    V_a = V_a[:,(np.fabs(V_a) < 2).all(axis=0)]    
 
     # Visualize fiber and attractor
     ax_fiber = pt.gca()
-    ax_fiber.scatter(*V_a, marker='.', s=1, color=((0.3, 0.3, 0.3),)) # attractor
+    ax_fiber.scatter(*V_a, marker='o', s=2, color=((0.3, 0.3, 0.3),)) # attractor
     tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=20, scale_V=5)
     ax_fiber.plot(x_fx, y_fx, 'ko') # fixed points
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points

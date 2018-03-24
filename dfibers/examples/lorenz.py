@@ -41,17 +41,14 @@ def Df(v):
 if __name__ == "__main__":
 
     # Collect attractor points
-    attractor = []
     t = np.arange(0,40,0.01)
-    for s in range(5):
-        v = 2*np.random.rand(N,1) - 1
-        V = si.odeint(lambda v, t: f(v.reshape((N,1))).flatten(), v.flatten(), t)
-        attractor.append(V.T)
+    v = np.ones((N,1))
+    A = si.odeint(lambda v, t: f(v.reshape((N,1))).flatten(), v.flatten(), t).T
 
     # Set up fiber arguments
     v = np.zeros((N,1))
     # c = np.random.randn(N,1)
-    c = np.array([[0.93288993, -0.13089137, -0.23625363]]).T
+    c = np.array([[0.83736021, -1.87848114, 0.43935044]]).T
     fiber_kwargs = {
         "f": f,
         "ef": ef,
@@ -70,17 +67,18 @@ if __name__ == "__main__":
 
     # Visualize strange attractor
     ax = pt.gca(projection="3d")
-    for a in attractor:
-        ax.plot(*a, color='gray', linestyle='-', alpha=0.5)
+    ax.plot(*A, color='gray', linestyle='-', alpha=0.5)
     br1 = np.sqrt(b*(r-1))
     U = np.array([[0, 0, 0],[br1,br1,r-1],[-br1,-br1,r-1]]).T
     ax.scatter(*U, color='black')
 
     # Run and visualize fiber components, for each fxpt
-    for fc in range(U.shape[1]):
+    xlims, ylims, zlims = [-20,20], [-30,30], [-20,60]
+    for fc in [0,2]:
 
         # start from current fxpt
         fiber_kwargs["v"] = U[:,[fc]]
+        # ax.text(U[0,fc],U[1,fc],U[2,fc], str(fc))
 
         # Run in one direction
         solution = sv.fiber_solver(**fiber_kwargs)
@@ -91,10 +89,11 @@ if __name__ == "__main__":
         solution = sv.fiber_solver(**fiber_kwargs)
         V2 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
     
-        # Join fiber segments
+        # Join fiber segments, restrict to figure limits
         V = np.concatenate((np.fliplr(V1), V2), axis=1)
         V = V[:,::50]
-        V = V[:,V[1,:] > -30] # respect axis limits
+        for i, (lo, hi) in enumerate([xlims, ylims, zlims]):
+            V = V[:,(lo < V[i,:]) & (V[i,:] < hi)]
         C = f(V)
 
         # Visualize fiber
@@ -104,7 +103,6 @@ if __name__ == "__main__":
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.set_zlabel("z")
-    ax.set_ylim([-30,30])
-    ax.view_init(elev=30,azim=-10)
+    ax.view_init(elev=15,azim=145)
     pt.tight_layout()
     pt.show()
