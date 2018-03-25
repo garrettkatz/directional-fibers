@@ -168,7 +168,6 @@ def run_fiber_solver(W, **kwargs):
         terminate = terminate_factory(W, c),
         max_step_size = 1,
         max_solve_iterations = 2**5,
-        solve_tolerance = 10**-18,
         **kwargs
     )
 

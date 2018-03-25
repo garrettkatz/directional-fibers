@@ -45,7 +45,6 @@ if __name__ == "__main__":
         "max_step_size": 1,
         "max_traverse_steps": 2000,
         "max_solve_iterations": 2**5,
-        "solve_tolerance": 10**-18,    
     }
 
     # Run in one direction
