@@ -20,7 +20,7 @@ code:
     more examples
         many at https://www.sfu.ca/~ssurjano/optimization.html
             Most amenable (diffy, easy mu):
-                    https://www.sfu.ca/~ssurjano/rastr.html
+                https://www.sfu.ca/~ssurjano/rastr.html
                 https://www.sfu.ca/~ssurjano/levy.html
                 https://www.sfu.ca/~ssurjano/griewank.html
         multivariate poly finite soln
