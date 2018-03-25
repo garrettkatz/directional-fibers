@@ -86,7 +86,6 @@ def fiber_solver(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
-    solve_tolerance=None,
     ):
     """
     Fixed point location using directional fibers.
@@ -114,7 +113,6 @@ def fiber_solver(
         max_traverse_steps=max_traverse_steps,
         max_step_size=max_step_size,
         max_solve_iterations=max_solve_iterations,
-        solve_tolerance=solve_tolerance,
     )
     
     # Keep final direction vector if random default (in theory shouldn't matter)
@@ -165,7 +163,6 @@ def fiber_solver(
             max_traverse_steps=2**5, # few steps needed for Newton-Raphson
             max_step_size=max_step_size,
             max_solve_iterations=max_solve_iterations,
-            solve_tolerance=solve_tolerance,
         )
         refinement_results.append(refinement_result)
         fixed_points.append(refinement_result.points[-1][:-1,:].copy())

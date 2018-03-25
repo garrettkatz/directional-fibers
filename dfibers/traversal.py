@@ -99,7 +99,6 @@ def traverse_fiber(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
-    solve_tolerance=None,
     ):
 
     """
@@ -126,8 +125,6 @@ def traverse_fiber(
     Each step is computed with Newton's method.
     Residual error is measured by the maximum norm of G.
     If provided, each step uses at most max_solve_iterations of Newton's method.
-    If provided, each step terminates after the Newton residual is within solve_tolerance.
-    At least one of max_solve_iterations and solve_tolerance should be provided.
 
     Returns the FiberTrace object for the traversal
     """
