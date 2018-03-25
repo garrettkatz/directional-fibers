@@ -19,7 +19,10 @@ code:
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples
         many at https://www.sfu.ca/~ssurjano/optimization.html
-        Schwefel function
+            Most amenable (diffy, easy mu):
+                    https://www.sfu.ca/~ssurjano/rastr.html
+                https://www.sfu.ca/~ssurjano/levy.html
+                https://www.sfu.ca/~ssurjano/griewank.html
         multivariate poly finite soln
         1d: mackey-glass, population dynamics, volterra
         compare with various global solvers in scipy like basin hopping
