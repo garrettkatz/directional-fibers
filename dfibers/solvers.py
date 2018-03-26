@@ -87,12 +87,12 @@ def fiber_solver(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
-    local_abs_min=True,
+    abs_alpha_min=True,
     within_fiber=True,
     ):
     """
     Root location using directional fibers.
-    If local_abs_min is True, includes local alpha minima as candidate roots.
+    If abs_alpha_min is True, includes local alpha minima as candidate roots.
     If within_fiber is True, candidates are refined within the fiber
     All other parameters are as described in directional_fibers.traverse_fiber().
     Returns solution, a dictionary with keys
@@ -100,6 +100,8 @@ def fiber_solver(
         "Fixed points": an array with one candidate root per column
         "Refinements": a list of local traverse_fiber results, one per fixed point
         "Fixed index": an array of fixed point candidate indices in the fiber
+        "Sign changes": an array of only sign change indices in the fiber
+        "|alpha| mins": an array of only |alpha| min indices in the fiber
     """
 
     # Traverse fiber
@@ -124,21 +126,23 @@ def fiber_solver(
     c = fiber_result.c
 
     # Extract candidate fixed points:
-    # endpoints, alpha sign change, local |alpha| minimum
-    # immediate neighbors for close pairs of fixed points and added redundancy
+    # don't combine |= with numpy views of same array, use logical_or
     X = np.concatenate(fiber_result.points, axis=1)
-    a = X[-1,:]
+    a = X[-1,:] # alpha
     fixed_index = np.zeros(len(a), dtype=bool)
-    # endpoints
-    fixed_index[[0, -1]] = True
+    fixed_index[[0, -1]] = True # endpoints
     # sign changes
-    fixed_index[:-1] |= np.sign(a[:-1]) != np.sign(a[1:])
+    sign_changes = fixed_index.copy()
+    sign_changes[:-1] = np.sign(a[:-1]) != np.sign(a[1:])
+    sign_changes[1:] |= np.logical_or(sign_changes[1:], sign_changes[:-1])
     # local minima of alpha magnitude
-    if local_abs_min:
-        fixed_index[1:-1] |= (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
-    # extra redundancy with neighbors (don't combine |= with numpy views)
-    fixed_index[:-1] = np.logical_or(fixed_index[:-1], fixed_index[1:])
-    fixed_index[1:] = np.logical_or(fixed_index[1:], fixed_index[:-1])
+    alpha_mins = fixed_index.copy()
+    if abs_alpha_min:
+        alpha_mins[1:-1] = (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
+        alpha_mins[:-2] = np.logical_or(alpha_mins[:-2], alpha_mins[1:-1])
+        alpha_mins[2:] = np.logical_or(alpha_mins[2:], alpha_mins[1:-1])
+    # union
+    fixed_index = sign_changes | alpha_mins
 
     # Set up within-fiber Newton-Raphson step computation
     def compute_refine_step_amount(trace):
@@ -179,7 +183,6 @@ def fiber_solver(
             candidate = refinement_result.points[-1][:-1,:].copy()
             
         fixed_points.append(candidate)
-
     
     # Return output
     solution = {
@@ -187,6 +190,8 @@ def fiber_solver(
         "Fixed points": np.concatenate(fixed_points,axis=1),
         "Refinements": refinement_results,
         "Fixed index": np.flatnonzero(fixed_index),
+        "Sign changes": np.flatnonzero(sign_changes),
+        "|alpha| mins": np.flatnonzero(alpha_mins),
     }
     return solution
 
