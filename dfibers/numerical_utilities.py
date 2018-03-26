@@ -1,16 +1,6 @@
-import os
 import itertools as it
 import numpy as np
 import scipy.linalg as spl
-
-def hardwrite(f,data):
-    """
-    Force file write to disk
-    """
-    if f.name == os.devnull: return
-    f.write(data)
-    f.flush()
-    os.fsync(f)
 
 def eps(x):
     """

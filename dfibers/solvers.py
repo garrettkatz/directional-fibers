@@ -190,8 +190,8 @@ def fiber_solver(
         "Fixed points": np.concatenate(fixed_points,axis=1),
         "Refinements": refinement_results,
         "Fixed index": np.flatnonzero(fixed_index),
-        "Sign changes": np.flatnonzero(sign_changes),
-        "|alpha| mins": np.flatnonzero(alpha_mins),
+        "Sign changes": np.flatnonzero(sign_changes[fixed_index]),
+        "|alpha| mins": np.flatnonzero(alpha_mins[fixed_index]),
     }
     return solution
 
