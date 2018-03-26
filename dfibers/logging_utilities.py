@@ -1,10 +1,25 @@
 import os
 
-def hardwrite(f,data):
-    """
-    Force file write to disk
-    """
-    if f.name == os.devnull: return
-    f.write(data)
-    f.flush()
-    os.fsync(f)
+class Logger:
+
+    def __init__(self, logfile, prefix):
+        """
+        Initialize logger with prefix and a file open for writing
+        """
+        self.logfile = logfile
+        self.prefix = prefix
+
+    def write(self.data):
+        """
+        Write data to log file
+        """
+        if self.logfile.name == os.devnull: return
+        self.logfile.write(prefix + data)
+        self.logfile.flush()
+        os.fsync(self.logfile)
+
+    def plus_prefix(self, prefix)
+        """
+        Construct new Logger with same prefix as self plus new one
+        """
+        return Logger(self.logfile, self.prefix + prefix)
