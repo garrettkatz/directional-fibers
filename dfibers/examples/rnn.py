@@ -133,7 +133,13 @@ def duplicates_factory(W):
     return lambda V, v: (np.fabs(V - v) < 2**-21).all(axis=0)
 
 def make_known_fixed_points(N):
-
+    """
+    Constructs an N-dimensional rnn with up to N known fixed points
+    returns
+        f, Df, ef: rnn functions
+        W: rnn weight matrix
+        V[:,[k]]: the k^{th} known fixed point
+    """
     # Sample random points
     V = 2.*np.random.rand(N,N) - 1.
     # Construct weight matrix known to have them as fixed points
@@ -141,7 +147,7 @@ def make_known_fixed_points(N):
     # Refine points to counteract finite-precision round-off error
     f, ef, Df = f_factory(W), ef_factory(W), Df_factory(W)
     V, fixed = fx.refine_points(V, f, ef, Df)
-    return W, V[:,fixed]
+    return f, Df, ef, W, V[:,fixed]
 
 def run_fiber_solver(W, **kwargs):
     """
@@ -193,7 +199,7 @@ if __name__ == "__main__":
 
     # Run solver
     fxpts, solution = run_fiber_solver(W,
-        local_abs_min = True,
+        abs_alpha_min = True,
         within_fiber = True)
     
     # Extract steps along fiber and corresponding f(v)'s
