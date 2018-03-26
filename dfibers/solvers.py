@@ -86,9 +86,11 @@ def fiber_solver(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
+    local_abs_min=True,
+    within_fiber=True,
     ):
     """
-    Fixed point location using directional fibers.
+    Fixed point location using directional fibers.    
     All parameters are as described in directional_fibers.traverse_fiber().
     Returns solution, a dictionary with keys
         "Fiber trace": the result of traverse_fiber()
