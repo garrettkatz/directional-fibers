@@ -10,11 +10,13 @@ import dfibers.examples.rnn as rnn
 
 # Maps network size: sample size
 network_sampling = {
-    # 3: 10,
-    10: 1,
+    3: 10,
+    # 10: 1,
 }
 
-logger = lu.Logger(sys.stdout)
+# logger = lu.Logger(sys.stdout)
+logger = lu.Logger(open("tmp.log","w"))
+
 for (N,S) in network_sampling.items():
     for sample in range(S):
     
@@ -24,7 +26,7 @@ for (N,S) in network_sampling.items():
         # Run fiber solver
         fxpts, solution = rnn.run_fiber_solver(W,
             max_traverse_steps = 10000,
-            logger=logger,
+            logger=logger.plus_prefix("(%d,%d): "%(N,sample)),
             abs_alpha_min = True,
             within_fiber = True)
 
