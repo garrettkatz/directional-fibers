@@ -1,5 +1,7 @@
 code:
     update readme
+    trace object tracking sign changes and alpha mins?
+    trace logger with format strings for different step data etc
     jim:
         experiment whether cts relaxation has same fxpts as discrete
     multisolver
@@ -11,10 +13,7 @@ code:
     more graceful error handling for critical directions (Baram email)
     _ prefix for private functions
     optimize rosenbrock optimization and check on lork Df areas (is DF also?)
-    log files
-        find a home for hardwrite (not numerical)
-        Logger class? hardwrite, and tracks indentation
-        also handles timing?
+    logger handling timing?
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples

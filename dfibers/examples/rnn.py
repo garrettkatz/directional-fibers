@@ -2,6 +2,7 @@
 Basic recurrent neural network model with activation rule:
     v[t+1] = np.tanh(W.dot(v[t]))
 """
+import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import dfibers.numerical_utilities as nu

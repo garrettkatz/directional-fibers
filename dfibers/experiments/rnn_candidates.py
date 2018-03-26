@@ -1,7 +1,9 @@
 """
 Measures improvement on RNN fixed point location of local minima of |alpha| and within-fiber refinement
 """
+import sys
 import numpy as np
+import dfibers.logging_utilities as lu
 import dfibers.numerical_utilities as nu
 import dfibers.fixed_points as fx
 import dfibers.examples.rnn as rnn
@@ -9,9 +11,10 @@ import dfibers.examples.rnn as rnn
 # Maps network size: sample size
 network_sampling = {
     # 3: 10,
-    10: 10,
+    10: 1,
 }
 
+logger = lu.Logger(sys.stdout)
 for (N,S) in network_sampling.items():
     for sample in range(S):
     
@@ -21,6 +24,7 @@ for (N,S) in network_sampling.items():
         # Run fiber solver
         fxpts, solution = rnn.run_fiber_solver(W,
             max_traverse_steps = 10000,
+            logger=logger,
             abs_alpha_min = True,
             within_fiber = True)
 

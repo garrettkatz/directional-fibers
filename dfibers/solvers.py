@@ -14,7 +14,7 @@ def local_solver(
     stop_time=None,
     max_repeats=None,
     max_updates=0,
-    logfile=None
+    logger=None
     ):
     """
     A fixed point solver using local optimization (Sussillo and Barak 2013)
@@ -82,7 +82,7 @@ def fiber_solver(
     z=None,
     N=None,
     terminate=None,
-    logfile=None,
+    logger=None,
     stop_time=None,
     max_traverse_steps=None,
     max_step_size=None,
@@ -115,7 +115,7 @@ def fiber_solver(
         z=z,
         N=N,
         terminate=terminate,
-        logfile=logfile,
+        logger=logger.plus_prefix("Traversal: "),
         stop_time=stop_time,
         max_traverse_steps=max_traverse_steps,
         max_step_size=max_step_size,
@@ -173,7 +173,7 @@ def fiber_solver(
                 v=candidate,
                 c=c,
                 terminate=refine_terminate,
-                logfile=logfile,
+                logger=logger.plus_prefix("Refinement %d: "%i),
                 stop_time=stop_time,
                 max_traverse_steps=2**5, # few steps needed for Newton-Raphson
                 max_step_size=max_step_size,

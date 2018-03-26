@@ -94,7 +94,7 @@ def traverse_fiber(
     z=None,
     N=None,
     terminate=None,
-    logfile=None,
+    logger=None,
     stop_time = None,
     max_traverse_steps=None,
     max_step_size=None,
@@ -117,7 +117,7 @@ def traverse_fiber(
     At least one of v, c, and N should be provided.
     
     If provided, the function terminate(trace) should return True when trace meets a custom termination criterion.
-    If provided, progress is written to the file object logfile.
+    If provided, progress is written to the Logger object logger.
     If provided, traversal terminates at the clock time stop_time.
     If provided, traversal terminates after max_traverse_steps.
     If provided, step sizes are truncated to max_step_size.
@@ -173,13 +173,16 @@ def traverse_fiber(
         x, step_residuals = take_step(f, Df, ef, c, z, x,
             step_amount, max_solve_iterations)
 
-        # Store progress
+        # Log and store progress
         trace.x = x
         trace.points.append(x)
         trace.tangents.append(z)
         trace.residuals.append(step_residuals[-1])
         trace.step_amounts.append(step_amount)
         trace.step_data.append(step_data)
+        if logger is not None and step % 10 == 0:
+            logger.log("step %d: residual %.3f, theta %.3f, step data %s...\n"%(
+                step, step_residuals[-1], step_amount, step_data))
 
         # Check for early termination criteria
         if max_traverse_steps is not None and step + 1 >= max_traverse_steps:
