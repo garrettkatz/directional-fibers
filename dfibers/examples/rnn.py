@@ -192,7 +192,9 @@ if __name__ == "__main__":
     W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
 
     # Run solver
-    fxpts, solution = run_fiber_solver(W)
+    fxpts, solution = run_fiber_solver(W,
+        local_abs_min = True,
+        within_fiber = True)
     
     # Extract steps along fiber and corresponding f(v)'s
     trace = solution["Fiber trace"]
