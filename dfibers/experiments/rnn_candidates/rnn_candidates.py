@@ -143,5 +143,5 @@ if __name__ == "__main__":
         100: 10,
     }
 
-    run_experiment(basename, network_sampling, num_procs=10)
+    run_experiment(basename, network_sampling, num_procs=0)
     # plot_results(basename, network_sampling)
