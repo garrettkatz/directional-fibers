@@ -79,15 +79,24 @@ def plot_results(results_filename, network_sampling):
     colors = np.linspace(.75, 0., len(network_sizes)) # light to dark
     
     with open(results_filename,'r') as f: results = pk.load(f)
+    handles = []
+    mnx = 0
     for i, N in enumerate(network_sizes):
+        rgba = [colors[i]]*3 + [1]
         S = network_sampling[N]
         old_counts = [results[N,s]["old count"] for s in range(S)]
         new_counts = [results[N,s]["new count"] for s in range(S)]
-        rgba = [colors[i]]*3 + [1]
-        pt.plot(old_counts, new_counts, 'o', fillstyle='none', markeredgecolor = rgba)
-    pt.legend(network_sizes)
+        mnx = max(mnx, min(max(old_counts), max(new_counts)))
+        handles.append(pt.plot(old_counts, new_counts, 'o', fillstyle='none', markeredgecolor = rgba)[0])
+        old_counts = [results[N,s]["old count"] for s in range(S)
+            if results[N,s]["status"]=="Terminated"]
+        new_counts = [results[N,s]["new count"] for s in range(S)
+            if results[N,s]["status"]=="Terminated"]
+        pt.plot(old_counts, new_counts, '+', fillstyle='none', markeredgecolor = rgba)
+    pt.plot([0, mnx], [0, mnx], linestyle='--',color=(0.85,)*3+(1,), zorder=-100)
+    pt.legend(handles, ["N=%d"%N for N in network_sizes],loc="lower right")
     pt.xlabel("Old counts")
-    pt.xlabel("New counts")
+    pt.ylabel("New counts")
     pt.show()
     
 if __name__ == "__main__":
@@ -96,15 +105,13 @@ if __name__ == "__main__":
 
     # Maps network size: sample size
     network_sampling = {
-        3: 5,
-        6: 5,
-        # 3: 50,
-        # 4: 50,
-        # 9: 50,
-        # 27: 10,
-        # 81: 10,
-        # 243: 10,
+        3: 50,
+        4: 50,
+        9: 50,
+        27: 10,
+        81: 10,
+        243: 10,
     }
 
-    run_experiment(results_filename, network_sampling)
-    # plot_results(results_filename, network_sampling)
+    # run_experiment(results_filename, network_sampling)
+    plot_results(results_filename, network_sampling)
