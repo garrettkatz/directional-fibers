@@ -136,12 +136,12 @@ if __name__ == "__main__":
 
     # Maps network size: sample size
     network_sampling = {
-        3: 20,
-        10: 20,
-        20: 20,
-        50: 20,
-        100: 10,
+        3: 10,
+        10: 10,
+        20: 10,
+        50: 5,
+        100: 5,
     }
 
-    run_experiment(basename, network_sampling, num_procs=0)
+    run_experiment(basename, network_sampling, num_procs=10)
     # plot_results(basename, network_sampling)
