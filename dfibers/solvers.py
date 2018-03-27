@@ -105,6 +105,8 @@ def fiber_solver(
     """
 
     # Traverse fiber
+    traverse_logger = logger
+    if logger is not None: traverse_logger = logger.plus_prefix("Traversal: ")
     fiber_result = tv.traverse_fiber(
         f,
         Df,
@@ -115,7 +117,7 @@ def fiber_solver(
         z=z,
         N=N,
         terminate=terminate,
-        logger=logger.plus_prefix("Traversal: "),
+        logger=traverse_logger,
         stop_time=stop_time,
         max_traverse_steps=max_traverse_steps,
         max_step_size=max_step_size,
@@ -165,6 +167,9 @@ def fiber_solver(
 
         if within_fiber:
             # Run within-fiber Newton-Raphson at each candidate
+            refine_logger = logger
+            if logger is not None:
+                refine_logger = logger.plus_prefix("Refinement %d: "%i)            
             refinement_result = tv.traverse_fiber(
                 f,
                 Df,
@@ -173,7 +178,7 @@ def fiber_solver(
                 v=candidate,
                 c=c,
                 terminate=refine_terminate,
-                logger=logger.plus_prefix("Refinement %d: "%i),
+                logger=refine_logger,
                 stop_time=stop_time,
                 max_traverse_steps=2**5, # few steps needed for Newton-Raphson
                 max_step_size=max_step_size,

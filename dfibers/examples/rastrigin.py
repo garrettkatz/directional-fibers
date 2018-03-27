@@ -50,7 +50,7 @@ if __name__ == "__main__":
         "f": f,
         "ef": ef,
         "Df": Df,
-        "compute_step_amount": compute_step_amount,
+        "compute_step_amount": lambda trace: (0.01,None), #compute_step_amount,
         "v": v,
         "c": c,
         "max_step_size": 1,
