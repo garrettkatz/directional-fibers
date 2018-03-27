@@ -24,7 +24,7 @@ def run_experiment(result_filename, network_sampling):
     
             # Run fiber solver
             fxpts, solution = rnn.run_fiber_solver(W,
-                max_traverse_steps = 2**14,
+                max_traverse_steps = 2**15,
                 logger=logger.plus_prefix("(%d,%d): "%(N,sample)),
                 abs_alpha_min = True,
                 within_fiber = True)
@@ -94,13 +94,13 @@ if __name__ == "__main__":
 
     # Maps network size: sample size
     network_sampling = {
-        3: 3,
-        4: 3,
-        9: 3,
-        # 27: 10,
-        # 81: 10,
-        # 243: 10,
+        3: 50,
+        4: 50,
+        9: 50,
+        27: 10,
+        81: 10,
+        243: 10,
     }
 
     run_experiment(results_filename, network_sampling)
-    plot_results(results_filename, network_sampling)
+    # plot_results(results_filename, network_sampling)
