@@ -4,6 +4,7 @@ code:
     trace logger with format strings for different step data etc
     jim:
         experiment whether cts relaxation has same fxpts as discrete
+        very interesting ortho idea
     multisolver
         handles oddness, closed loops, and disconnected components
         oddness gets shortcut:
@@ -12,13 +13,12 @@ code:
     for local and multi, smarter termination criteria (e.g., time since last new fixed point >= time to last new fixed point, after many points found)
     more graceful error handling for critical directions (Baram email)
     _ prefix for private functions
-    optimize rosenbrock optimization and check on lork Df areas (is DF also?)
     logger handling timing?
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples
         many at https://www.sfu.ca/~ssurjano/optimization.html
-            Most amenable (diffy, easy mu):
+            Most amenable (diffy, easy mu?):
                 https://www.sfu.ca/~ssurjano/rastr.html
                 https://www.sfu.ca/~ssurjano/levy.html
                 https://www.sfu.ca/~ssurjano/griewank.html
