@@ -28,6 +28,7 @@ def run_experiment(result_filename, network_sampling):
                 logger=logger.plus_prefix("(%d,%d): "%(N,sample)),
                 abs_alpha_min = True,
                 within_fiber = True)
+            status = solution["Fiber trace"].status
     
             # Get pre-refinement sign change candidates
             sign_changes = solution["Sign changes"]
@@ -37,7 +38,7 @@ def run_experiment(result_filename, network_sampling):
                 axis = 1)
     
             # Post-process sign change candidates
-            logger.log("(%d,%d): Sanitizing %d sc points"%(
+            logger.log("(%d,%d): Sanitizing %d sc points\n"%(
                 N,sample, 2*candidates.shape[1] + 1))
             sign_change_fxpts = fx.sanitize_points(
                 np.concatenate(
@@ -48,7 +49,7 @@ def run_experiment(result_filename, network_sampling):
             )
     
             # Count union
-            logger.log("(%d,%d): Sanitizing %d+%d=%d union points"%(
+            logger.log("(%d,%d): Sanitizing %d+%d=%d union points\n"%(
                 N,sample, fxpts.shape[1], sign_change_fxpts.shape[1],
                 fxpts.shape[1] + sign_change_fxpts.shape[1]))
             union_fxpts = fx.sanitize_points(
@@ -59,11 +60,12 @@ def run_experiment(result_filename, network_sampling):
                 duplicates = rnn.duplicates_factory(W),
             )
     
-            print("(%d,%d) fxpt counts: %d, %d < %d"%(
+            print("(%d,%d) fxpt counts: new %d, old %d, union %d (status=%s)"%(
                 N,sample,fxpts.shape[1], sign_change_fxpts.shape[1],
-                union_fxpts.shape[1]))
+                union_fxpts.shape[1], status))
                 
             results[(N,sample)] = {
+                "status": status,
                 "new count": fxpts.shape[1],
                 "old count":  sign_change_fxpts.shape[1],
                 "union": union_fxpts.shape[1],
@@ -94,12 +96,14 @@ if __name__ == "__main__":
 
     # Maps network size: sample size
     network_sampling = {
-        3: 50,
-        4: 50,
-        9: 50,
-        27: 10,
-        81: 10,
-        243: 10,
+        3: 5,
+        6: 5,
+        # 3: 50,
+        # 4: 50,
+        # 9: 50,
+        # 27: 10,
+        # 81: 10,
+        # 243: 10,
     }
 
     run_experiment(results_filename, network_sampling)
