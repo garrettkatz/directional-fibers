@@ -15,7 +15,7 @@ def trialname(basename, N, sample):
     return "%s_N%d_s%d"%(basename, N, sample)
 
 def run_trial(args):
-    basename, N, sample, W, V = args
+    basename, N, sample, W, V, timeout = args
 
     logfile = open(trialname(basename,N,sample)+".log", "w")
     logger = lu.Logger(logfile)
@@ -27,7 +27,7 @@ def run_trial(args):
 
     # Run fiber solver
     solve_logger = logger.plus_prefix("(%d,%d): "%(N,sample))
-    stop_time = time.clock() + 60*20 # max 20 min
+    stop_time = time.clock() + timeout
     fxpts, solution = rnn.run_fiber_solver(W,
         # max_traverse_steps = 2**15,
         stop_time = stop_time,
@@ -82,14 +82,14 @@ def run_trial(args):
     with open(trialname(basename,N,sample)+".pkl",'w') as rf:
         pk.dump(results, rf)
 
-def run_experiment(basename, network_sampling, num_procs=0):
+def run_experiment(basename, network_sampling, timeout, num_procs=0):
 
     pool_args = []
     for (N,S) in network_sampling.items():
         for sample in range(S):
             # Sample network outside of pool for randomness
             _, _, _, W, V = rnn.make_known_fixed_points(N)
-            pool_args.append((basename, N, sample, W, V))
+            pool_args.append((basename, N, sample, W, V, timeout))
 
     if num_procs > 0:
 
@@ -150,12 +150,14 @@ if __name__ == "__main__":
 
     # Maps network size: sample size
     network_sampling = {
-        3: 10,
-        10: 10,
-        20: 10,
-        50: 5,
-        100: 5,
+        4: 20,
+        8: 20,
+        12: 20,
+        16: 20,
+        32: 10,
+        64: 5,
+        128: 5,
     }
 
-    # run_experiment(basename, network_sampling, num_procs=10)
-    plot_results(basename, network_sampling)
+    run_experiment(basename, network_sampling, timeout=60*60, num_procs=5)
+    # plot_results(basename, network_sampling)
