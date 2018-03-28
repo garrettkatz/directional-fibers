@@ -2,6 +2,7 @@ code:
     update readme
     trace object tracking sign changes and alpha mins?
     trace logger with format strings for different step data etc
+    min num_procs,num_cpus really needed/good?
     jim:
         experiment whether cts relaxation has same fxpts as discrete
         very interesting ortho idea
