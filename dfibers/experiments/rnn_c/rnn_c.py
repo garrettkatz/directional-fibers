@@ -131,7 +131,7 @@ def plot_results(basename, network_sizes):
         for sample in range(num_samples):
             sample_basename = "%s_p%d_N%d_s%d"%(basename,p,N,sample)
             with open(sample_basename+".pkl",'r') as rf: results = pk.load(rf)
-            with open(sample_basename+".npz",'r') as df: data = np.load(df)
+            # with open(sample_basename+".npz",'r') as df: data = np.load(df)
 
             num_trials = results["trials"]
             for trial in range(num_trials):
@@ -155,9 +155,9 @@ def plot_results(basename, network_sizes):
 if __name__ == "__main__":
 
     basename = "rnn_c"
-    network_sizes = [3,4,5,6,7]
+    network_sizes = [3,4,5,6,7]+[3,4,5,6,7]
     # num_procs = 5
-    timeout = 60*60
+    timeout = 60*60*18
     run_experiment(basename, network_sizes, timeout, num_procs=len(network_sizes))
 
     plot_results(basename, network_sizes)
