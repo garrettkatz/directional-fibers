@@ -142,23 +142,22 @@ def plot_results(basename, network_sizes):
                     results[trial]["|fxpts|"],
                     results[trial]["|V|"]))
             
-            pt.plot(range(num_trials), [
-                # float(results[t]["|fxpts|"])/float(results[num_trials-1]["|V|"])
-                float(results[t]["|fxpts|"])
-                for t in range(num_trials)],'-k')
-            pt.plot(range(num_trials), [
-                # float(results[t]["|V|"])/float(results[num_trials-1]["|V|"])
-                float(results[t]["|V|"])
-                for t in range(num_trials)],'--k')
-    pt.show()
+    #         pt.plot(range(num_trials), [
+    #             # float(results[t]["|fxpts|"])/float(results[num_trials-1]["|V|"])
+    #             float(results[t]["|fxpts|"])
+    #             for t in range(num_trials)],'-k')
+    #         pt.plot(range(num_trials), [
+    #             # float(results[t]["|V|"])/float(results[num_trials-1]["|V|"])
+    #             float(results[t]["|V|"])
+    #             for t in range(num_trials)],'--k')
+    # pt.show()
 
 if __name__ == "__main__":
 
     basename = "rnn_c"
     network_sizes = [3,4,5,6,7]
-    # network_sizes = [3,3]
     # num_procs = 5
     timeout = 60*60
     run_experiment(basename, network_sizes, timeout, num_procs=len(network_sizes))
 
-    # plot_results(basename, network_sizes)
+    plot_results(basename, network_sizes)
