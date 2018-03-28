@@ -22,6 +22,8 @@ code:
                 https://www.sfu.ca/~ssurjano/rastr.html
                 https://www.sfu.ca/~ssurjano/levy.html
                 https://www.sfu.ca/~ssurjano/griewank.html
+                *https://www.sfu.ca/~ssurjano/hart6.html
+
         multivariate poly finite soln
         1d: mackey-glass, population dynamics, volterra
         compare with various global solvers in scipy like basin hopping

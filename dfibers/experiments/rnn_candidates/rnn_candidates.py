@@ -117,22 +117,31 @@ def plot_results(basename, network_sampling):
 
     handles = []
     mnx = 0
+    pt.figure(figsize=(6,3))
     for i, N in enumerate(network_sizes):
         rgba = [colors[i]]*3 + [1]
         S = network_sampling[N]
         old_counts = [results[N,s]["old count"] for s in range(S)]
         new_counts = [results[N,s]["new count"] for s in range(S)]
+        count_diff = [n-o for n,o in zip(new_counts,old_counts)]
         mnx = max(mnx, min(max(old_counts), max(new_counts)))
-        handles.append(pt.plot(old_counts, new_counts, 'o', fillstyle='none', markeredgecolor = rgba)[0])
+        # handles.append(pt.plot(old_counts, new_counts, 'o', fillstyle='none', markeredgecolor = rgba)[0])
+        handles.append(pt.plot(old_counts, count_diff, 'o', fillstyle='none', markeredgecolor = rgba)[0])
         old_counts = [results[N,s]["old count"] for s in range(S)
             if results[N,s]["status"]=="Terminated"]
         new_counts = [results[N,s]["new count"] for s in range(S)
             if results[N,s]["status"]=="Terminated"]
-        pt.plot(old_counts, new_counts, '+', fillstyle='none', markeredgecolor = rgba)
-    pt.plot([0, mnx], [0, mnx], linestyle='--',color=(0.85,)*3+(1,), zorder=-100)
+        count_diff = [n-o for n,o in zip(new_counts,old_counts)]
+        # pt.plot(old_counts, new_counts, '+', fillstyle='none', markeredgecolor = rgba)
+        pt.plot(old_counts, count_diff, '+', fillstyle='none', markeredgecolor = rgba)
+    # pt.plot([0, mnx], [0, mnx], linestyle='--',color=(0.85,)*3+(1,), zorder=-100)
+    # pt.xscale('log')
+    # pt.yscale('log')
     pt.legend(handles, ["N=%d"%N for N in network_sizes],loc="lower right")
     pt.xlabel("Old counts")
-    pt.ylabel("New counts")
+    # pt.ylabel("New counts")
+    pt.ylabel("New counts - Old counts")
+    pt.tight_layout()
     pt.show()
     
 if __name__ == "__main__":
@@ -148,5 +157,5 @@ if __name__ == "__main__":
         100: 5,
     }
 
-    run_experiment(basename, network_sampling, num_procs=10)
-    # plot_results(basename, network_sampling)
+    # run_experiment(basename, network_sampling, num_procs=10)
+    plot_results(basename, network_sampling)
