@@ -96,38 +96,65 @@ def run_experiment(basename, num_samples, timeout, num_procs=0):
 
         for pa in pool_args: run_trial(pa)
 
-def analyze_results(basename, num_samples):
+def compile_results(basename, num_samples):
     
     L = []
     F = []
+    runtimes = []
     for sample in range(num_samples):
         with open("%s_s%d.npz"%(basename,sample), 'r') as rf: data = dict(np.load(rf))
         fxpts = data["fxpts"]
         Fs = np.fabs(lv.f(fxpts)).max(axis=0)
-        Ls = np.zeros(fxpts.shape[1])
-        for j in range(fxpts.shape[1]):
-            Ls[j] = lv.levy(fxpts[:,[j]])
-        within = (np.fabs(fxpts) < 10).all()
-        mean_within = np.nan
-        if within.sum() > 0: mean_within = Ls[within].mean()
+        Ls = lv.levy(fxpts)
+        within = (np.fabs(fxpts) < 10).all(axis=0)
+        mean_within = Ls[within].mean() if within.any() else np.nan
         print("sample %d: %d secs, %d solns, mean %f, mean within %f, min %f"%(
             sample, data["runtime"], len(Ls), Ls.mean(), mean_within, Ls.min()))
         L.append(Ls)
         F.append(Fs)
+        runtimes.append(data["runtime"])
     
     counts = np.array([len(Ls) for Ls in L])
     bests = np.array([Ls.min() for Ls in L])
     resids = np.array([Fs.max() for Fs in F])
+    runtimes = np.array(runtimes)
     print("avg count = %d, avg best = %f, avg resid = %f, best best = %f"%(
         counts.mean(), bests.mean(), resids.mean(), bests.min()))
+    return counts, bests, runtimes
 
-def plot_results(basename, num_samples):
+def plot_results(basename, num_samples, counts, bests, runtimes, timeout):
 
+    ### Optimization order stats
+    pt.figure(figsize=(5,4))
+    pt.subplot(2,1,1)
+    pt.plot(np.sort(bests), '-k.')
+    pt.xlabel("Ordered samples")
+    pt.ylabel("Best objective value")
+
+    ##### Work complexity
+    pt.subplot(2,1,2)
+    terms = (runtimes < timeout)
+    pt.plot(runtimes[terms], bests[terms], 'k+', markerfacecolor='none')
+    pt.plot(runtimes[~terms], bests[~terms], 'ko', markerfacecolor='none')
+    pt.legend(["terminated","timed out"])
+    pt.xlabel("Runtime (seconds)")
+    pt.ylabel("Best objective value")
+
+    pt.tight_layout()
+    pt.show()
+
+    ### Fiber visuals
+
+    pt.figure(figsize=(4,7))
     # objective fun
     X_surface, Y_surface = np.mgrid[-10:10:100j,-10:10:100j]
     L = lv.levy(np.array([X_surface.flatten(), Y_surface.flatten()])).reshape(X_surface.shape)
     ax_surface = pt.gcf().add_subplot(2,1,1,projection="3d")
     ax_surface.plot_surface(X_surface, Y_surface, L, linewidth=0, antialiased=False, color='gray')
+    ax_surface.set_xlabel("v0")
+    ax_surface.set_ylabel("v1")
+    ax_surface.set_zlabel("levy(v)")
+    ax_surface.view_init(azim=-80, elev=20)
 
     # fibers
     ax = pt.gcf().add_subplot(2,1,2)
@@ -137,27 +164,45 @@ def plot_results(basename, num_samples):
     ax.quiver(XY[0,:],XY[1,:],C_XY[0,:],C_XY[1,:],color=0.5*np.ones((1,3)),
         scale=10,units='xy',angles='xy')
 
-    colors = np.linspace(.45, 0., num_samples) # light to dark
-    for sample in range(num_samples):
+    num_plot_samples = 3
+    sort_idx = np.argsort(bests)
+    plot_idx = [0] + list(np.random.permutation(num_samples)[:num_plot_samples-1])
+    samples = sort_idx[plot_idx]
+    # samples = [41,73,20] # all through global
+    # samples = [41, 97, 11] # two through global
+    # samples = [41, 49, 13] # two through global, one horiz not through
+    # samples = [41, 46, 70] # one through global, one horiz
+    # samples = [41, 96, 27] # two through global, one almost horiz
+    samples = [41, 63, 28] # two through global, all interesting
+    print("samples:")
+    print(samples)
+    for i,sample in enumerate(samples[::-1]):
         with open("%s_s%d.npz"%(basename,sample), 'r') as rf: data = dict(np.load(rf))
         fxpts = data["fxpts"]
-        fiber = data["fiber"][:,::10]
+        fiber = data["fiber"][:,::]
     
-        col = colors[sample]
+        L = lv.levy(fxpts).min()
+        col = 0.5*float(num_plot_samples-i-1)/num_plot_samples
+        print(sample,col)
         ax.plot(fiber[0],fiber[1],color=(col,col,col,1), linestyle='-', linewidth=1)
         pt.plot(fxpts[0],fxpts[1], 'o', color=(col,col,col,1))
 
+    pt.xlabel("v0")
+    pt.ylabel("v1",rotation=0)
+    pt.yticks(np.linspace(-10,10,5))
     pt.xlim([-10,10])
     pt.ylim([-10,10])
+    pt.tight_layout()
     pt.show()
 
 if __name__ == "__main__":
 
     basename = "levy_opt"
     num_samples = 100
+    num_plot_samples = 3
     timeout = 60*30
     num_procs = 10
 
-    run_experiment(basename, num_samples=num_samples, timeout=timeout, num_procs=num_procs)
-    analyze_results(basename, num_samples)
-    plot_results(basename, num_samples)
+    # run_experiment(basename, num_samples=num_samples, timeout=timeout, num_procs=num_procs)
+    counts, bests, runtimes = compile_results(basename, num_samples)
+    plot_results(basename, num_samples, counts, bests, runtimes, timeout)
