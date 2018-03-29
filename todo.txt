@@ -1,4 +1,6 @@
 code:
+    resampler for trace history when it gets to big
+        e.g., keep every other point (and all candidate points)
     update readme
     trace object tracking sign changes and alpha mins?
     trace logger with format strings for different step data etc

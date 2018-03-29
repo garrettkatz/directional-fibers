@@ -201,9 +201,10 @@ def traverse_fiber(
             break
         
     # final output
+    if logger is not None: logger.log("Status: %s\n"%trace.status)
     return trace
 
-def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1):
+def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1, fiber_color='k'):
     """
     Plots a fiber within a 2d state space
     pt.show still needs to be called separately
@@ -226,7 +227,7 @@ def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1):
         scale=scale_XY,units='xy',angles='xy')
 
     # Draw fiber with incident direction vectors
-    ax.plot(V[0,:],V[1,:],'k-',linewidth=1)
+    ax.plot(V[0,:],V[1,:],color=fiber_color, linestyle='-', linewidth=1)
     ax.quiver(V[0,:],V[1,:],C_V[0,:],C_V[1,:],color=0.0*np.ones((1,3)),
         scale=scale_V,units='xy',angles='xy')
 

@@ -112,8 +112,11 @@ def plot_results(basename, network_sampling):
     results = {}
     for (N,S) in network_sampling.items():
         for sample in range(S):
-            with open(trialname(basename,N,sample)+".pkl",'r') as rf:
-                results[N,sample] = pk.load(rf)
+            try:
+                with open(trialname(basename,N,sample)+".pkl",'r') as rf:
+                    results[N,sample] = pk.load(rf)
+            except:
+                print("error: %d,%d"%(N,sample))
 
     handles = []
     mnx = 0
@@ -121,15 +124,16 @@ def plot_results(basename, network_sampling):
     for i, N in enumerate(network_sizes):
         rgba = [colors[i]]*3 + [1]
         S = network_sampling[N]
-        old_counts = [results[N,s]["old count"] for s in range(S)]
-        new_counts = [results[N,s]["new count"] for s in range(S)]
+        SSS = [s for s in range(S) if (N,s) in results]
+        old_counts = [results[N,s]["old count"] for s in SSS]
+        new_counts = [results[N,s]["new count"] for s in SSS]
         count_diff = [n-o for n,o in zip(new_counts,old_counts)]
         mnx = max(mnx, min(max(old_counts), max(new_counts)))
         # handles.append(pt.plot(old_counts, new_counts, 'o', fillstyle='none', markeredgecolor = rgba)[0])
         handles.append(pt.plot(old_counts, count_diff, 'o', fillstyle='none', markeredgecolor = rgba)[0])
-        old_counts = [results[N,s]["old count"] for s in range(S)
+        old_counts = [results[N,s]["old count"] for s in SSS
             if results[N,s]["status"]=="Terminated"]
-        new_counts = [results[N,s]["new count"] for s in range(S)
+        new_counts = [results[N,s]["new count"] for s in SSS
             if results[N,s]["status"]=="Terminated"]
         count_diff = [n-o for n,o in zip(new_counts,old_counts)]
         # pt.plot(old_counts, new_counts, '+', fillstyle='none', markeredgecolor = rgba)
@@ -137,7 +141,7 @@ def plot_results(basename, network_sampling):
     # pt.plot([0, mnx], [0, mnx], linestyle='--',color=(0.85,)*3+(1,), zorder=-100)
     # pt.xscale('log')
     # pt.yscale('log')
-    pt.legend(handles, ["N=%d"%N for N in network_sizes],loc="lower right")
+    pt.legend(handles, ["N=%d"%N for N in network_sizes],loc="upper left")
     pt.xlabel("Old counts")
     # pt.ylabel("New counts")
     pt.ylabel("New counts - Old counts")
@@ -159,5 +163,5 @@ if __name__ == "__main__":
         128: 5,
     }
 
-    run_experiment(basename, network_sampling, timeout=60*60, num_procs=5)
-    # plot_results(basename, network_sampling)
+    # run_experiment(basename, network_sampling, timeout=60*60, num_procs=5)
+    plot_results(basename, network_sampling)
