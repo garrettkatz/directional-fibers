@@ -82,7 +82,7 @@ if __name__ == "__main__":
     y_fx = b*x_fx
 
     # Grids for fiber and attractor
-    X_fiber, Y_fiber = np.mgrid[-2:2:40j, -2:2:40j]
+    X_fiber, Y_fiber = np.mgrid[-2:2:20j, -2:2:20j]
     X_a, Y_a = np.mgrid[-1:1:100j, -1:1:100j]
 
     # Compute attractor points
@@ -93,11 +93,14 @@ if __name__ == "__main__":
     V_a = V_a[:,(np.fabs(V_a) < 2).all(axis=0)]    
 
     # Visualize fiber and attractor
+    pt.figure(figsize=(3.5,3.5))
     ax_fiber = pt.gca()
     ax_fiber.scatter(*V_a, marker='o', s=2, color=((0.3, 0.3, 0.3),)) # attractor
-    tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=20, scale_V=5)
+    tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=10, scale_V=10)
     ax_fiber.plot(x_fx, y_fx, 'ko') # fixed points
     # ax_fiber.plot(x_lork, y_lork, 'r-') # low-rank Df points
     ax_fiber.set_xlabel("x")
-    ax_fiber.set_ylabel("y")
+    ax_fiber.set_ylabel("y",rotation=0)
+    pt.yticks(np.linspace(-2,2,5))
+    pt.tight_layout()
     pt.show()
