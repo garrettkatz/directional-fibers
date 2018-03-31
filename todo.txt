@@ -1,4 +1,5 @@
 code:
+    mu = A + B\delta step
     resampler for trace history when it gets to big
         e.g., keep every other point (and all candidate points)
     update readme
