@@ -3,6 +3,7 @@ import numpy as np
 import numerical_utilities as nu
 import itertools as it
 import matplotlib.pyplot as plt
+import fixed_points as fx
 
 class FiberTrace:
     """
@@ -17,6 +18,7 @@ class FiberTrace:
     residuals[p]: the p^th residual error as float
     step_amounts[p]: the p^th step amount as float
     step_data[p]: additional data for the p^th step (user defined)
+    candidates[p]: True if p^{th} point is candidate root
     """
     def __init__(self, c):
         self.status = "Traversing"
@@ -30,6 +32,43 @@ class FiberTrace:
         self.residuals = []
         self.step_amounts = []
         self.step_data = []
+        self.candidates = np.empty(0, dtype=bool)
+        self.sign_changes = np.empty(0, dtype=bool)
+        self.alpha_mins = np.empty(0, dtype=bool)
+
+    def index_candidates(self, abs_alpha_min = True):
+        X = np.concatenate(self.points, axis=1)
+        X = X[:,len(self.candidates):]
+        fixed_index, sign_changes, alpha_mins = fx.index_candidates(
+            X, abs_alpha_min)
+        self.candidates = np.concatenate((self.candidates, fixed_index))
+        self.sign_changes = np.concatenate((self.sign_changes, sign_changes))
+        self.alpha_mins = np.concatenate((self.alpha_mins, alpha_mins))
+
+    def halve_points(self, abs_alpha_min = True):
+
+        # Update candidate index
+        self.index_candidates(abs_alpha_min)
+
+        # Keep all candidates and half non-candidates
+        keep = self.candidates.copy()
+        non_candidates = np.flatnonzero(self.candidates == False)
+        keep_non_candidates = non_candidates[::2]
+        keep[keep_non_candidates] = True
+        
+        # Set up pruning
+        def prune(l):
+            return [l[k] for k in range(len(keep)) if keep[k]]
+
+        # Do pruning
+        self.points = prune(self.points)
+        self.tangents = prune(self.tangents)
+        self.residuals = prune(self.residuals)
+        self.step_amounts = prune(self.step_amounts)
+        self.step_data = prune(self.step_data)
+        self.candidates = self.candidates[keep]
+        self.sign_changes = self.sign_changes[keep]
+        self.alpha_mins = self.alpha_mins[keep]
 
 def eF(x, c, f, ef):
     """

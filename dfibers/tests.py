@@ -53,10 +53,7 @@ class RNNFixedPointsTestCase(ut.TestCase):
     def setUp(self):
         self.N = 10
         self.P = 5
-        self.W, self.V = rnn.make_known_fixed_points(self.N)
-        self.f = rnn.f_factory(self.W)
-        self.ef = rnn.ef_factory(self.W)
-        self.Df = rnn.Df_factory(self.W)
+        self.f, self.Df, self.ef, self.W, self.V = rnn.make_known_fixed_points(self.N)
         self.noise = 5
         # self.duplicates = lambda V, u: (np.fabs(V - u) < 2*self.noise*nu.eps(V)).all(axis=0)
         self.duplicates = rnn.duplicates_factory(self.W)
@@ -92,10 +89,7 @@ class RNNLocalSolverTestCase(ut.TestCase):
     def setUp(self):
         self.N = 3
         self.P = 5
-        self.W, self.V = rnn.make_known_fixed_points(self.N)
-        self.f = rnn.f_factory(self.W)
-        self.ef = rnn.ef_factory(self.W)
-        self.Df = rnn.Df_factory(self.W)
+        self.f, self.Df, self.ef, self.W, self.V = rnn.make_known_fixed_points(self.N)
         self.sampler = rnn.sampler_factory(self.W)
         self.qg = rnn.qg_factory(self.W)
         self.H = rnn.H_factory(self.W)
@@ -114,6 +108,27 @@ class RNNLocalSolverTestCase(ut.TestCase):
         self.assertTrue(U.shape[1] >= self.V.shape[1])
         for p in range(self.V.shape[1]):
             self.assertTrue(self.duplicates(U, self.V[:,[p]]).any())
+
+class FiberTraceTestCase(ut.TestCase):
+
+    # @ut.skip("")
+    def test_halve_points(self):
+        trace = tv.FiberTrace(None)
+        alpha = [3, 2, 1, .5, .4, 1, 2, 3, 2, 1, .5, -1, -2, -3]
+        #        c, _, _,  c,  c, c, _, _, _, c,  c,  c,  _,  c
+        #        k, k, _,  k,  k, k, k, _, k, k,  k,  k,  _,  k
+        for a in alpha:
+            trace.points.append(np.array([[0,0,a]]).T)
+            trace.tangents.append(None)
+            trace.residuals.append(None)
+            trace.step_amounts.append(None)
+            trace.step_data.append(None)
+
+        trace.halve_points()
+        if VERBOSE: print([p[-1,0] for p in trace.points])
+
+        self.assertTrue(len(trace.points) == 11)
+
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
@@ -307,6 +322,8 @@ def main():
     test_suite = ut.TestLoader().loadTestsFromTestCase(RNNFixedPointsTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     test_suite = ut.TestLoader().loadTestsFromTestCase(RNNLocalSolverTestCase)
+    ut.TextTestRunner(verbosity=2).run(test_suite)
+    test_suite = ut.TestLoader().loadTestsFromTestCase(FiberTraceTestCase)
     ut.TextTestRunner(verbosity=2).run(test_suite)
     
 if __name__ == "__main__": main()
