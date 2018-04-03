@@ -33,21 +33,20 @@ To find fixed points with `directional-fibers`, first you need to define your dy
 >>> f = lambda v: np.tanh(W.dot(v)) - v
 ```
 
-Next you must define a function `Df` that computes the NxN Jacobian of `f`.  Only dynamical systems with differentiable `f` can be used.  If v has more than one column, then Df should be a 3d numpy array, where `Df(v)[k,:,:]` is the Jacobian evaluated at `v[:,[k]]`.  Continuing the example:
+Next you must define a function `Df` that computes the NxN Jacobian of `f`.  Only dynamical systems with differentiable `f` can be used.  Given an NxK numpy array as input, `Df` should produce a KxNxN numpy array as output, where `Df(v)[k,:,:]` is the Jacobian evaluated at `v[:,[k]]`.  Continuing the example:
 
 ```python
 >>> I = np.eye(W.shape[0])
 >>> def Df(V):
 ...     D = 1-np.tanh(W.dot(V))**2
-...     if V.shape[1] == 1: return D*W - I
-...     else: return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
+...     return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
 ...
 ```
 
 Next you must define a function `ef` that bounds the forward error in `f`: the difference between the true mathematical value of `f` and its finite-precision machine approximation.  A point `v` is considered fixed when `(np.fabs(f(v)) < ef(v)).all()`. `ef` is also used during directional fiber traversal to keep residual errors near machine precision.  Since `ef` essentially plays the role of a tolerance, as a simpler alternative you can have it return a constant value:
 
 ```python
->>> ef = lambda v: 10**-6
+>>> ef = lambda v: 10**-10
 ```
 
 As directional fibers are traversed, the current and past traversal data (points along the fiber, residual errors, etc.) are saved in a `FiberTrace` object:

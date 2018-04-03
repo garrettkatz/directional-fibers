@@ -8,8 +8,7 @@ f = lambda v: np.tanh(W.dot(v)) - v
 I = np.eye(W.shape[0])
 def Df(V):
     D = 1-np.tanh(W.dot(V))**2
-    if V.shape[1] == 1: return D*W - I
-    else: return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
+    return D.T[:,:,np.newaxis]*W[np.newaxis,:,:] - I[np.newaxis,:,:]
 
 ef = lambda v: 10**-10
 
