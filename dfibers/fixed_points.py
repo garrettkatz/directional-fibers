@@ -15,6 +15,37 @@ def is_fixed(V, f, ef):
     fixed = (np.fabs(f(V)) < error).all(axis=0)
     return fixed, error
 
+def index_candidates(fiber_points, abs_alpha_min=True):
+    """
+    Index candidate roots along a fiber
+    fiber_points[:,[k]]: k^{th} point along lifted fiber
+    returns fixed_index, sign_changes, alpha_mins
+        True at [k] iff k^{th} point is candidate by that criterion
+    """
+    # don't combine |= with numpy views of same array, use logical_or
+
+    alpha = fiber_points[-1,:] # alpha
+    fixed_index = np.zeros(len(alpha), dtype=bool)
+    fixed_index[[0, -1]] = True # endpoints
+
+    # sign changes
+    sign_changes = fixed_index.copy()
+    sign_changes[:-1] = np.sign(alpha[:-1]) != np.sign(alpha[1:])
+    sign_changes[1:] = np.logical_or(sign_changes[1:], sign_changes[:-1])
+
+    # local minima of alpha magnitude
+    alpha_mins = fixed_index.copy()
+    if abs_alpha_min:
+        alpha_mins[1:-1] = np.logical_and(
+            (np.fabs(alpha[1:-1]) <= np.fabs(alpha[2:])),
+            (np.fabs(alpha[1:-1]) <= np.fabs(alpha[:-2])))
+        alpha_mins[:-2] = np.logical_or(alpha_mins[:-2], alpha_mins[1:-1])
+        alpha_mins[2:] = np.logical_or(alpha_mins[2:], alpha_mins[1:-1])
+
+    # return union
+    fixed_index = sign_changes | alpha_mins
+    return fixed_index, sign_changes, alpha_mins
+
 def refine_points(V, f, ef, Df, max_iters=2**5, batch_size=100):
     """
     Refine candidate fixed points with Newton-Raphson iterations

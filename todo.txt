@@ -5,9 +5,11 @@ code:
     trace object tracking sign changes and alpha mins?
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
+    nomenclature: "fixed" -> "root"
     jim:
         experiment whether cts relaxation has same fxpts as discrete
         very interesting ortho idea
+        switching c mid-traverse: as more roots located, update based on their span
     multisolver
         handles oddness, closed loops, and disconnected components
         oddness gets shortcut:

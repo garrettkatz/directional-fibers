@@ -127,24 +127,27 @@ def fiber_solver(
     # Keep final direction vector if random default (in theory shouldn't matter)
     c = fiber_result.c
 
-    # Extract candidate fixed points:
-    # don't combine |= with numpy views of same array, use logical_or
+    # # Extract candidate fixed points:
+    # # don't combine |= with numpy views of same array, use logical_or
+    # X = np.concatenate(fiber_result.points, axis=1)
+    # a = X[-1,:] # alpha
+    # fixed_index = np.zeros(len(a), dtype=bool)
+    # fixed_index[[0, -1]] = True # endpoints
+    # # sign changes
+    # sign_changes = fixed_index.copy()
+    # sign_changes[:-1] = np.sign(a[:-1]) != np.sign(a[1:])
+    # sign_changes[1:] |= np.logical_or(sign_changes[1:], sign_changes[:-1])
+    # # local minima of alpha magnitude
+    # alpha_mins = fixed_index.copy()
+    # if abs_alpha_min:
+    #     alpha_mins[1:-1] = (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
+    #     alpha_mins[:-2] = np.logical_or(alpha_mins[:-2], alpha_mins[1:-1])
+    #     alpha_mins[2:] = np.logical_or(alpha_mins[2:], alpha_mins[1:-1])
+    # # union
+    # fixed_index = sign_changes | alpha_mins
+    
     X = np.concatenate(fiber_result.points, axis=1)
-    a = X[-1,:] # alpha
-    fixed_index = np.zeros(len(a), dtype=bool)
-    fixed_index[[0, -1]] = True # endpoints
-    # sign changes
-    sign_changes = fixed_index.copy()
-    sign_changes[:-1] = np.sign(a[:-1]) != np.sign(a[1:])
-    sign_changes[1:] |= np.logical_or(sign_changes[1:], sign_changes[:-1])
-    # local minima of alpha magnitude
-    alpha_mins = fixed_index.copy()
-    if abs_alpha_min:
-        alpha_mins[1:-1] = (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
-        alpha_mins[:-2] = np.logical_or(alpha_mins[:-2], alpha_mins[1:-1])
-        alpha_mins[2:] = np.logical_or(alpha_mins[2:], alpha_mins[1:-1])
-    # union
-    fixed_index = sign_changes | alpha_mins
+    fixed_index, sign_changes, alpha_mins = fx.index_candidates(X, abs_alpha_min)
 
     # Set up within-fiber Newton-Raphson step computation
     def compute_refine_step_amount(trace):
