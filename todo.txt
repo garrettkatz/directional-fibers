@@ -1,9 +1,9 @@
 code:
+    tag version of code at submission
+    update readme
     mu = A + B\delta step
     resampler for trace history when it gets to big
         e.g., keep every other point (and all candidate points)
-    update readme
-    trace object tracking sign changes and alpha mins?
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
     nomenclature: "fixed" -> "root"

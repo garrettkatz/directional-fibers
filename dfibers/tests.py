@@ -129,7 +129,6 @@ class FiberTraceTestCase(ut.TestCase):
 
         self.assertTrue(len(trace.points) == 11)
 
-
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
         self.N = 2

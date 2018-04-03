@@ -87,14 +87,14 @@ def fiber_solver(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
+    max_history=None,
     abs_alpha_min=True,
     within_fiber=True,
     ):
     """
     Root location using directional fibers.
-    If abs_alpha_min is True, includes local alpha minima as candidate roots.
     If within_fiber is True, candidates are refined within the fiber
-    All other parameters are as described in directional_fibers.traverse_fiber().
+    All other parameters are as described in traversal.traverse_fiber().
     Returns solution, a dictionary with keys
         "Fiber trace": the result of traverse_fiber()
         "Fixed points": an array with one candidate root per column
@@ -122,32 +122,17 @@ def fiber_solver(
         max_traverse_steps=max_traverse_steps,
         max_step_size=max_step_size,
         max_solve_iterations=max_solve_iterations,
+        abs_alpha_min=abs_alpha_min,
+        max_history=max_history,
     )
     
     # Keep final direction vector if random default (in theory shouldn't matter)
     c = fiber_result.c
 
-    # # Extract candidate fixed points:
-    # # don't combine |= with numpy views of same array, use logical_or
-    # X = np.concatenate(fiber_result.points, axis=1)
-    # a = X[-1,:] # alpha
-    # fixed_index = np.zeros(len(a), dtype=bool)
-    # fixed_index[[0, -1]] = True # endpoints
-    # # sign changes
-    # sign_changes = fixed_index.copy()
-    # sign_changes[:-1] = np.sign(a[:-1]) != np.sign(a[1:])
-    # sign_changes[1:] |= np.logical_or(sign_changes[1:], sign_changes[:-1])
-    # # local minima of alpha magnitude
-    # alpha_mins = fixed_index.copy()
-    # if abs_alpha_min:
-    #     alpha_mins[1:-1] = (np.fabs(a[1:-1]) <= np.fabs(a[2:])) & (np.fabs(a[1:-1]) <= np.fabs(a[:-2]))
-    #     alpha_mins[:-2] = np.logical_or(alpha_mins[:-2], alpha_mins[1:-1])
-    #     alpha_mins[2:] = np.logical_or(alpha_mins[2:], alpha_mins[1:-1])
-    # # union
-    # fixed_index = sign_changes | alpha_mins
-    
+    # Extract candidate roots
     X = np.concatenate(fiber_result.points, axis=1)
-    fixed_index, sign_changes, alpha_mins = fx.index_candidates(X, abs_alpha_min)
+    fixed_index, sign_changes, alpha_mins = fiber_result.index_candidates(abs_alpha_min)
+    X = X[:, fixed_index]
 
     # Set up within-fiber Newton-Raphson step computation
     def compute_refine_step_amount(trace):
@@ -161,7 +146,6 @@ def fiber_solver(
     refine_terminate = lambda trace: fx.is_fixed(trace.x[:-1,:], f, ef)[0] or terminate(trace)
 
     # Refine each candidate root
-    X = X[:, fixed_index]
     refinement_results = []
     fixed_points = []
     for i in range(X.shape[1]):
@@ -173,6 +157,7 @@ def fiber_solver(
             refine_logger = logger
             if logger is not None:
                 refine_logger = logger.plus_prefix("Refinement %d: "%i)            
+
             refinement_result = tv.traverse_fiber(
                 f,
                 Df,

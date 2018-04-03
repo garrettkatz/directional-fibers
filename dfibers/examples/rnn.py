@@ -200,6 +200,7 @@ if __name__ == "__main__":
 
     # Run solver
     fxpts, solution = run_fiber_solver(W,
+        max_history=100,
         abs_alpha_min = True,
         within_fiber = True)
     

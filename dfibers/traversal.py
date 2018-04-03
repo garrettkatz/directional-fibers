@@ -37,13 +37,14 @@ class FiberTrace:
         self.alpha_mins = np.empty(0, dtype=bool)
 
     def index_candidates(self, abs_alpha_min = True):
-        X = np.concatenate(self.points, axis=1)
-        X = X[:,len(self.candidates):]
+        alpha = np.array([p[-1,0]
+            for p in self.points[len(self.candidates):]])
         fixed_index, sign_changes, alpha_mins = fx.index_candidates(
-            X, abs_alpha_min)
+            alpha, abs_alpha_min)
         self.candidates = np.concatenate((self.candidates, fixed_index))
         self.sign_changes = np.concatenate((self.sign_changes, sign_changes))
         self.alpha_mins = np.concatenate((self.alpha_mins, alpha_mins))
+        return self.candidates, self.sign_changes, self.alpha_mins
 
     def halve_points(self, abs_alpha_min = True):
 
@@ -58,7 +59,7 @@ class FiberTrace:
         
         # Set up pruning
         def prune(l):
-            return [l[k] for k in range(len(keep)) if keep[k]]
+            return [l[k] for k in range(len(l)) if keep[k]]
 
         # Do pruning
         self.points = prune(self.points)
@@ -138,6 +139,8 @@ def traverse_fiber(
     max_traverse_steps=None,
     max_step_size=None,
     max_solve_iterations=None,
+    abs_alpha_min=True,
+    max_history=None,
     ):
 
     """
@@ -165,6 +168,10 @@ def traverse_fiber(
     Residual error is measured by the maximum norm of G.
     If provided, each step uses at most max_solve_iterations of Newton's method.
 
+    If abs_alpha_min is True, local minima of alpha magnitude are candidate roots.
+    If provided, max_history is the most fiber points saved in the trace.
+    When exceeded, half the non-root-candidate points, evenly spaced, are discarded.
+
     Returns the FiberTrace object for the traversal
     """
 
@@ -178,7 +185,6 @@ def traverse_fiber(
     if v is not None:
         x[:N,:] = v
         x[N,:] = (f(v)[c != 0] / c[c != 0]).mean()
-
 
     # Drive initial va to fiber in case of residual error
     x, initial_residuals = refine_initial(f, Df, ef, x, c, max_solve_iterations)
@@ -238,6 +244,10 @@ def traverse_fiber(
         if len(trace.points) > 2 and np.fabs(trace.points[-1]-trace.points[0]).max() < np.fabs(trace.points[2]-trace.points[0]).max():
             trace.status = "Closed loop"
             break
+
+        # Check for maximum fiber history
+        if max_history is not None and len(trace.points) > max_history:
+            trace.halve_points(abs_alpha_min)
         
     # final output
     if logger is not None: logger.log("Status: %s\n"%trace.status)

@@ -15,16 +15,15 @@ def is_fixed(V, f, ef):
     fixed = (np.fabs(f(V)) < error).all(axis=0)
     return fixed, error
 
-def index_candidates(fiber_points, abs_alpha_min=True):
+def index_candidates(alpha, abs_alpha_min=True):
     """
     Index candidate roots along a fiber
-    fiber_points[:,[k]]: k^{th} point along lifted fiber
+    alpha[k]: k^{th} alpha along lifted fiber
     returns fixed_index, sign_changes, alpha_mins
         True at [k] iff k^{th} point is candidate by that criterion
     """
     # don't combine |= with numpy views of same array, use logical_or
 
-    alpha = fiber_points[-1,:] # alpha
     fixed_index = np.zeros(len(alpha), dtype=bool)
     fixed_index[[0, -1]] = True # endpoints
 
