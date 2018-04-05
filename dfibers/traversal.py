@@ -71,6 +71,38 @@ class FiberTrace:
         self.sign_changes = self.sign_changes[keep]
         self.alpha_mins = self.alpha_mins[keep]
 
+def compute_step_amount_factory(f2, f3):
+    """
+    Build a compute_step_amount function for traversal.
+    f2(x) should bound |d^2f_i(x)/dx_j dx_k| for all i,j,k.
+    f3 should bound |d^3f_i(x)/dx_j dx_k dx_l| for all x,i,j,k,l.
+    returns compute_step_amount, a step function suitable for traverse.
+        The function signature is compute_step_amount(trace),
+        where trace includes fields DF, and z:
+            DF is the derivative of F(x), and z is the fiber tangent.
+        the first return value is the step amount
+        the second return value is the minimum singular value of Dg at x
+    """
+    def compute_step_amount(trace):
+
+        # lambda
+        Dg = np.concatenate((trace.DF, trace.z.T), axis=0)
+        sv_min = nu.minimum_singular_value(Dg)
+        
+        # delta
+        N = trace.x.shape[0]-1
+        A = N*f2(trace.x[:N])
+        B = N**1.5 * f3
+        delta = (2*A - (4*A**2 + 12*sv_min*B)**.5)/(-6*B)
+
+        # theta
+        mu = A + B*delta
+        step_amount = delta * ( 1 - delta * mu / sv_min)
+
+        return step_amount, sv_min
+
+    return compute_step_amount
+
 def eF(x, c, f, ef):
     """
     Forward error in F(x)

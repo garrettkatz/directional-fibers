@@ -6,6 +6,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 import dfibers.numerical_utilities as nu
+import dfibers.logging_utilities as lu
 import dfibers.fixed_points as fx
 import dfibers.traversal as tv
 import dfibers.solvers as sv
@@ -114,6 +115,31 @@ def compute_step_amount_factory(W):
         return step_amount, sv_min
     return compute_step_amount
 
+def compute_step_amount_factory3(W):
+    """
+    For a given weight matrix W, returns the function compute_step_amount,
+    which returns a certified step size at a particular fiber point.
+    The function signature is compute_step_amount(trace),
+    where trace includes fields DF, and z:
+    DF is the derivative of F(x), and z is the fiber tangent.
+    compute_step_amount's first return value is the step amount
+    compute_step_amount's second return value is the minimum singular value of Dg at x
+    """
+
+    # f2
+    N = W.shape[0]
+    def f2(x):
+        Wv = W.dot(x[:N])
+        sig2 = np.fabs(2*np.tanh(Wv)*(1 - np.tanh(Wv)**2))
+        return (sig2*np.fabs(W**2).max(axis=1)[:,np.newaxis]).max()
+
+    # f3
+    sig3 = 2 # max |tanh'''|
+    f3 = sig3 * np.fabs(W**3).max()
+
+    # step size
+    return tv.compute_step_amount_factory(f2, f3)
+
 def terminate_factory(W, c):
     """
     For a given weight matrix W and direction vector c, returns the function terminate,
@@ -163,17 +189,18 @@ def run_fiber_solver(W, **kwargs):
     else:
         c = np.random.randn(N,1)
         c = c/np.linalg.norm(c)
+        kwargs["c"] = c
+    
+    if "compute_step_amount" not in kwargs:
+        kwargs["compute_step_amount"] = compute_step_amount_factory(W)
 
     # Run solver from origin
     solution = sv.fiber_solver(
         f = f_factory(W),
         ef = ef_factory(W),
         Df = Df_factory(W),
-        compute_step_amount = compute_step_amount_factory(W),
         v = np.zeros((N,1)),
-        c = c,
         terminate = terminate_factory(W, c),
-        max_step_size = 1,
         max_solve_iterations = 2**5,
         **kwargs
     )
@@ -198,12 +225,14 @@ if __name__ == "__main__":
     N = 2
     W = 1.25*np.eye(N) + 0.1*np.random.randn(N,N)
 
-    # Run solver
+    logger = lu.Logger(sys.stdout)
     fxpts, solution = run_fiber_solver(W,
-        max_history=100,
+        # max_history=100,
+        compute_step_amount = compute_step_amount_factory3(W),
+        logger=logger,
         abs_alpha_min = True,
         within_fiber = True)
-    
+
     # Extract steps along fiber and corresponding f(v)'s
     trace = solution["Fiber trace"]
     X = np.concatenate(trace.points, axis=1)

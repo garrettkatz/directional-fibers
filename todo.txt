@@ -1,6 +1,6 @@
 code:
     tag version of code at submission
-    mu = A + B\delta step
+    jim model with ef and step
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
     nomenclature: "fixed" -> "root"
