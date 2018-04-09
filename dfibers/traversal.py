@@ -53,6 +53,7 @@ class FiberTrace:
 
         # Keep all candidates and half non-candidates
         keep = self.candidates.copy()
+        keep[0] = True # keep initial fiber point
         non_candidates = np.flatnonzero(self.candidates == False)
         keep_non_candidates = non_candidates[::2]
         keep[keep_non_candidates] = True

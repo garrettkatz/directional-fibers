@@ -1,6 +1,6 @@
 code:
+    within-fiber refinements should not terminate on closed loop!!!
     tag version of code at submission
-    jim model with ef and step
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
     nomenclature: "fixed" -> "root"
@@ -25,7 +25,6 @@ code:
                 https://www.sfu.ca/~ssurjano/levy.html
                 https://www.sfu.ca/~ssurjano/griewank.html
                 *https://www.sfu.ca/~ssurjano/hart6.html
-
         multivariate poly finite soln
         1d: mackey-glass, population dynamics, volterra
         compare with various global solvers in scipy like basin hopping
@@ -51,5 +50,3 @@ experiments:
         empirical characterization of fiber topologies
         typical rate of new points being found
 
-doc:
-    requires numpy 1.14

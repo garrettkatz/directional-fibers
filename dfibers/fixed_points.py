@@ -25,7 +25,6 @@ def index_candidates(alpha, abs_alpha_min=True):
     # don't combine |= with numpy views of same array, use logical_or
 
     fixed_index = np.zeros(len(alpha), dtype=bool)
-    fixed_index[[0, -1]] = True # endpoints
 
     # sign changes
     sign_changes = fixed_index.copy()
