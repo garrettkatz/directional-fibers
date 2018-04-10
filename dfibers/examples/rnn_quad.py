@@ -59,8 +59,8 @@ def compute_step_amount_factory(W):
 if __name__ == "__main__":
 
     # Set network parameters
-    N = 2
-    P = 1
+    N = 4
+    P = 2
     V = np.sign(np.random.randn(N,P))
     W = V.dot(V.T) - P*np.eye(N,N)
     
@@ -72,7 +72,7 @@ if __name__ == "__main__":
     # Set up fiber arguments
     v = np.zeros((N,1))
     # c = np.random.randn(N,1)
-    c = np.array([[1],[-.5]])
+    c = V.dot(np.random.randn(P,1)) # span of training data
     logfile = sys.stdout
     fiber_kwargs = {
         "f": f,
@@ -91,26 +91,42 @@ if __name__ == "__main__":
     # Run in one direction
     solution = sv.fiber_solver(**fiber_kwargs)
     V1 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
+    V1_fx = solution["Fixed points"]
     z = solution["Fiber trace"].z_initial
     
     # Run in other direction (negate initial tangent)
     fiber_kwargs["z"] = -z
     solution = sv.fiber_solver(**fiber_kwargs)
     V2 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
+    V2_fx = solution["Fixed points"]
 
-    # Join fiber segments
+    # Join fiber segments and fixed points
     V = np.concatenate((np.fliplr(V1), V2), axis=1)
+    V_fx = np.concatenate((V1_fx, V2_fx), axis=1)
     
-    # Visualize fiber
-    X_f, Y_f = np.mgrid[-2:2:15j,-2:2:15j]
-    V = V[:, \
-        (V[0,:] >= X_f.min()) & \
-        (V[0,:] <= X_f.max()) & \
-        (V[1,:] >= Y_f.min()) & \
-        (V[1,:] <= Y_f.max())]
-    # V = V[:,::20]
-    tv.plot_fiber(X_f, Y_f, V, f, scale_XY=8, scale_V=5)
+    fxpts = fx.sanitize_points(
+        V_fx, f, ef, Df,
+        duplicates = lambda V, v: (np.fabs(V - v) < 10**-6).all(axis=0),
+    )
     
-    pt.xlabel("x")
-    pt.ylabel("y")
-    pt.show()
+    print("Fxpts:")
+    print(fxpts)
+    print("Residuals:")
+    print(ef(fxpts))
+    
+    # Visualize fiber if 2d
+    if N == 2:
+        X_f, Y_f = np.mgrid[-2:2:15j,-2:2:15j]
+        V = V[:, \
+            (V[0,:] >= X_f.min()) & \
+            (V[0,:] <= X_f.max()) & \
+            (V[1,:] >= Y_f.min()) & \
+            (V[1,:] <= Y_f.max())]
+        # V = V[:,::20]
+        tv.plot_fiber(X_f, Y_f, V, f, scale_XY=8, scale_V=5)
+    
+        pt.plot(*fxpts, marker='o', color='k', linestyle='none')
+        
+        pt.xlabel("x")
+        pt.ylabel("y")
+        pt.show()
