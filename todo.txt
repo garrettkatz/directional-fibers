@@ -1,7 +1,4 @@
 code:
-    within-fiber refinements should not terminate on closed loop!!!
-    also, don't discard initial points needed for closed loop detection!!!
-
     tag version of code at submission
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
