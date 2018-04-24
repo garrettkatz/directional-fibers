@@ -273,7 +273,7 @@ def traverse_fiber(
         trace.step_amounts.append(step_amount)
         trace.step_data.append(step_data)
         if logger is not None and step % 10 == 0:
-            logger.log("step %d: residual %.3f, theta %.3f, step data %s...\n"%(
+            logger.log("step %d: residual %f, theta %f, step data %s...\n"%(
                 step, step_residuals[-1], step_amount, step_data))
 
         # Check for early termination criteria
