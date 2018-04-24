@@ -56,7 +56,8 @@ class FiberTrace:
         non_candidates = np.flatnonzero(self.candidates == False)
         keep_non_candidates = non_candidates[::2]
         keep[keep_non_candidates] = True
-        keep[0] = True # keep initial fiber point (should be true anyway)
+        # keep leading and last points for closed loop detection
+        keep[[0,1,2,-1]] = True
         
         # Set up pruning
         def prune(l):
@@ -178,6 +179,7 @@ def traverse_fiber(
     max_solve_iterations=None,
     abs_alpha_min=True,
     max_history=None,
+    check_closed_loop=True,
     ):
 
     """
@@ -209,6 +211,8 @@ def traverse_fiber(
     If abs_alpha_min is True, local minima of alpha magnitude are candidate roots.
     If provided, max_history is the most fiber points saved in the trace.
     When exceeded, half the non-root-candidate points, evenly spaced, are discarded.
+
+    If check_closed_loop is True, traversal terminates if a closed loop is detected.
 
     Returns the FiberTrace object for the traversal
     """
@@ -284,9 +288,12 @@ def traverse_fiber(
             trace.status = "Terminated"
             break
         # Check for closed loop
-        if len(trace.points) > 2 and np.fabs(trace.points[-1]-trace.points[0]).max() < np.fabs(trace.points[2]-trace.points[0]).max():
-            trace.status = "Closed loop"
-            break
+        if check_closed_loop and len(trace.points) > 2:
+            current_distance = np.fabs(trace.points[-1]-trace.points[0]).max()
+            initial_distance = np.fabs(trace.points[2]-trace.points[0]).max()
+            if current_distance < initial_distance:
+                trace.status = "Closed loop"
+                break
 
         # Check for maximum fiber history
         if max_history is not None and len(trace.points) > max_history:

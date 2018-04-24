@@ -83,6 +83,7 @@ if __name__ == "__main__":
         solution = sv.fiber_solver(**fiber_kwargs)
         V1 = np.concatenate(solution["Fiber trace"].points, axis=1)[:N,:]
         z = solution["Fiber trace"].z_initial
+
         # Run in other direction (negate initial tangent)
         fiber_kwargs["z"] = -z
         solution = sv.fiber_solver(**fiber_kwargs)

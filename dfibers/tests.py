@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 np.set_printoptions(linewidth=200)
 
-VERBOSE = True
+VERBOSE = False
 
 class FixedPointsTestCase(ut.TestCase):
     def setUp(self):
@@ -115,8 +115,9 @@ class FiberTraceTestCase(ut.TestCase):
     def test_halve_points(self):
         trace = tv.FiberTrace(None)
         alpha = [3, 2, 1, .5, .4, 1, 2, 3, 2, 1, .5, -1, -2, -3]
-        #        _, _, _,  c,  c, c, _, _, _, c,  c,  c,  _,  _
-        #        k, _, k,  k,  k, k, _, k, _, k,  k,  k,  k,  _
+        #        _, _, _,  c,  c, c, _, _, _, c,  c,  c,  _,  _ candidates
+        #        k, _, k,  k,  k, k, _, k, _, k,  k,  k,  k,  _ every other non
+        #        k, k, k,  k,  k, k, _, k, _, k,  k,  k,  k,  k leading and last
         for a in alpha:
             trace.points.append(np.array([[0,0,a]]).T)
             trace.tangents.append(None)
@@ -128,7 +129,7 @@ class FiberTraceTestCase(ut.TestCase):
         if VERBOSE: print([p[-1,0] for p in trace.points])
         if VERBOSE: print(len(trace.points))
 
-        self.assertTrue(len(trace.points) == 10)
+        self.assertTrue(len(trace.points) == 12)
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):

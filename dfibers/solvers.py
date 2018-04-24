@@ -132,6 +132,7 @@ def fiber_solver(
     # Extract candidate roots
     X = np.concatenate(fiber_result.points, axis=1)
     fixed_index, sign_changes, alpha_mins = fiber_result.index_candidates(abs_alpha_min)
+    fixed_index[0] = True # in case started at fixed point
     X = X[:, fixed_index]
 
     # Set up within-fiber Newton-Raphson step computation
@@ -148,7 +149,7 @@ def fiber_solver(
 
     # Refine each candidate root
     refinement_results = []
-    fixed_points = []
+    fixed_points = [np.empty((X.shape[0]-1,0))] # in case none found
     for i in range(X.shape[1]):
 
         candidate = X[:-1,[i]].copy()
@@ -172,6 +173,7 @@ def fiber_solver(
                 max_traverse_steps=2**5, # few steps needed for Newton-Raphson
                 max_step_size=max_step_size,
                 max_solve_iterations=max_solve_iterations,
+                check_closed_loop=False,
             )
             refinement_results.append(refinement_result)
             candidate = refinement_result.points[-1][:-1,:].copy()
