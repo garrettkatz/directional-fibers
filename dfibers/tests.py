@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 np.set_printoptions(linewidth=200)
 
-VERBOSE = False
+VERBOSE = True
 
 class FixedPointsTestCase(ut.TestCase):
     def setUp(self):
@@ -115,8 +115,8 @@ class FiberTraceTestCase(ut.TestCase):
     def test_halve_points(self):
         trace = tv.FiberTrace(None)
         alpha = [3, 2, 1, .5, .4, 1, 2, 3, 2, 1, .5, -1, -2, -3]
-        #        c, _, _,  c,  c, c, _, _, _, c,  c,  c,  _,  c
-        #        k, k, _,  k,  k, k, k, _, k, k,  k,  k,  _,  k
+        #        _, _, _,  c,  c, c, _, _, _, c,  c,  c,  _,  _
+        #        k, _, k,  k,  k, k, _, k, _, k,  k,  k,  k,  _
         for a in alpha:
             trace.points.append(np.array([[0,0,a]]).T)
             trace.tangents.append(None)
@@ -126,8 +126,9 @@ class FiberTraceTestCase(ut.TestCase):
 
         trace.halve_points()
         if VERBOSE: print([p[-1,0] for p in trace.points])
+        if VERBOSE: print(len(trace.points))
 
-        self.assertTrue(len(trace.points) == 11)
+        self.assertTrue(len(trace.points) == 10)
 
 class RNNDirectionalFiberTestCase(ut.TestCase):
     def setUp(self):
@@ -187,10 +188,10 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         trace.DF = DF
         trace.z = z
 
-        step_size, sv_min = self.compute_step_amount(trace)
+        step_size, sv_min, critical = self.compute_step_amount(trace)
         if VERBOSE: print("")
-        if VERBOSE: print("step_size, sv_min")
-        if VERBOSE: print(step_size, sv_min) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
+        if VERBOSE: print("step_size, sv_min, critical")
+        if VERBOSE: print(step_size, sv_min, critical) # sometimes = 1/(2mu) if all svs of DF > 1 (z gets the = 1)
 
     # @ut.skip("")
     def test_take_step(self):
@@ -204,7 +205,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
         trace.DF = DF
         trace.z = z
 
-        step_size = self.compute_step_amount(trace)
+        step_size, step_data, critical = self.compute_step_amount(trace)
         if self.max_step_size is not None: step_size = min(step_size, self.max_step_size)
 
         x_new, residuals = tv.take_step(

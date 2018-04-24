@@ -110,9 +110,9 @@ def compute_step_amount_factory(W):
     mu = np.sqrt(16./27.) * np.linalg.norm(W) * min(np.linalg.norm(W), np.sqrt((W*W).sum(axis=1)).max())
     def compute_step_amount(trace):
         Dg = np.concatenate((trace.DF, trace.z.T), axis=0)
-        sv_min = nu.minimum_singular_value(Dg)
+        sv_min, low_rank = nu.minimum_singular_value(Dg)
         step_amount = sv_min / (4. * mu)
-        return step_amount, sv_min
+        return step_amount, sv_min, low_rank
     return compute_step_amount
 
 def compute_step_amount_factory3(W):

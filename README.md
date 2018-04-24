@@ -64,10 +64,15 @@ You can define a custom termination criterion that takes a `FiberTrace` object a
 
 Alternatively there are also standard termination criteria such as maximum run time or maximum number of steps that can be specified later as keyword arguments.  In that case you can set `terminate = None`.
 
-Lastly, you should define a `compute_step_amount` function, which computes a reasonable step size for the current numerical step along the fiber.  This function should take a `FiberTrace` object as input, and return two outputs: `step_amount`, the actual size of the step, and `step_data`, which can contain any additional step-related data of interest and will be saved for your post-traversal analysis.  In the simplest case, you can return a small constant step size and no additional data:
+Lastly, you should define a `compute_step_amount` function, which computes a reasonable step size for the current numerical step along the fiber.  This function should take a `FiberTrace` object as input, and return three outputs:
+- `step_amount`: the actual size of the step
+- `step_data`: any additional step-related data of interest that will be saved for your post-traversal analysis
+- `critical`: Boolean flag indicating whether the current point is a critical one.
+
+In the simplest case, you can return a small constant step size, no additional data, and assume the fiber is not critical:
 
 ```python
->>> compute_step_amount = lambda trace: (10**-3, None)
+>>> compute_step_amount = lambda trace: (10**-3, None, False)
 ```
 
 Finally, you can now run the solver:

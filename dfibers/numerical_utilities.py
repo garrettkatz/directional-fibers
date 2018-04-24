@@ -40,10 +40,15 @@ def solve(A, B):
 
 def minimum_singular_value(A):
     """
-    Returns the minimum singular value of numpy.array A
+    Returns (min_sv, low_rank), where
+        min_sv is the minimum singular value of numpy.array A
+        low_rank is True only if A is low rank
     """
     # slightly faster than np.linalg.norm/svd:
-    return np.sqrt(spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0])
+    min_eig = spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0]
+    low_rank = (min_eig <= 0)
+    min_sv = 0 if low_rank else np.sqrt(min_eig)
+    return np.sqrt(min_eig), low_rank
 
 def nr_solve(x, f, Df, ef, max_iterations=None):
     """

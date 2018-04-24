@@ -57,7 +57,7 @@ if __name__ == "__main__":
         "f": f,
         "ef": ef,
         "Df": Df,
-        "compute_step_amount": lambda trace: (0.01, 0),
+        "compute_step_amount": lambda trace: (0.01, 0, False),
         "v": v,
         "c": c,
         "terminate": lambda trace: (np.fabs(trace.x[:N,:]) > 10).any(),

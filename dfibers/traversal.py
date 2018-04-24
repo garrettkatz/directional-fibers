@@ -53,10 +53,10 @@ class FiberTrace:
 
         # Keep all candidates and half non-candidates
         keep = self.candidates.copy()
-        keep[0] = True # keep initial fiber point
         non_candidates = np.flatnonzero(self.candidates == False)
         keep_non_candidates = non_candidates[::2]
         keep[keep_non_candidates] = True
+        keep[0] = True # keep initial fiber point (should be true anyway)
         
         # Set up pruning
         def prune(l):
@@ -83,24 +83,28 @@ def compute_step_amount_factory(f2, f3):
             DF is the derivative of F(x), and z is the fiber tangent.
         the first return value is the step amount
         the second return value is the minimum singular value of Dg at x
+        the third return value is True only if x is a critical point
     """
     def compute_step_amount(trace):
 
         # lambda
         Dg = np.concatenate((trace.DF, trace.z.T), axis=0)
-        sv_min = nu.minimum_singular_value(Dg)
-        
-        # delta
-        N = trace.x.shape[0]-1
-        A = N*f2(trace.x[:N])
-        B = N**1.5 * f3
-        delta = (2*A - (4*A**2 + 12*sv_min*B)**.5)/(-6*B)
+        sv_min, low_rank = nu.minimum_singular_value(Dg)
+        step_amount = 0
 
-        # theta
-        mu = A + B*delta
-        step_amount = delta * ( 1 - delta * mu / sv_min)
+        if not low_rank:
 
-        return step_amount, sv_min
+            # delta
+            N = trace.x.shape[0]-1
+            A = N*f2(trace.x[:N])
+            B = N**1.5 * f3
+            delta = (2*A - (4*A**2 + 12*sv_min*B)**.5)/(-6*B)
+    
+            # theta
+            mu = A + B*delta
+            step_amount = delta * ( 1 - delta * mu / sv_min)
+
+        return step_amount, sv_min, low_rank
 
     return compute_step_amount
 
@@ -184,6 +188,7 @@ def traverse_fiber(
     The user-provided function compute_step_amount(trace) should return:
         step_amount: signed step size at point x along fiber with derivative DF and tangent z
         step_data: output for any additional data that will be saved for post-traversal analysis
+        critical: True only if x is a critical point
 
     v is an approximate starting point for traveral (defaults to the origin).
     c is a direction vector (defaults to random).
@@ -243,10 +248,15 @@ def traverse_fiber(
         if step == 0: trace.z_initial = z
 
         # Get step size
-        step_amount, step_data = compute_step_amount(trace)
+        step_amount, step_data, step_critical = compute_step_amount(trace)
         if max_step_size is not None:
             step_amount = np.sign(step_amount)*min(np.fabs(step_amount), max_step_size)
-               
+
+        # Check for critical fiber
+        if step_critical:
+            trace.status = "Critical point encountered"
+            break
+
         # Update x
         x, step_residuals = take_step(f, Df, ef, c, z, x,
             step_amount, max_solve_iterations)

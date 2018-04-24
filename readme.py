@@ -17,7 +17,7 @@ import dfibers.traversal as tv
 
 terminate = lambda trace: (np.fabs(trace.x) > 10**6).any()
 
-compute_step_amount = lambda trace: (10**-3, None)
+compute_step_amount = lambda trace: (10**-3, None, False)
 
 import dfibers.solvers as sv
 # help(tv.traverse_fiber)
