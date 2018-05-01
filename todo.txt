@@ -18,6 +18,7 @@ code:
     repetitions in tests with multiple W
     "performance" tests: not asserts, but how often things are within expected tolerances, good statuses, etc
     more examples
+        apply to multiextremal optimization RNN in malek2018multiextremal.pdf
         many at https://www.sfu.ca/~ssurjano/optimization.html
             Most amenable (diffy, easy mu?):
                 https://www.sfu.ca/~ssurjano/rastr.html
