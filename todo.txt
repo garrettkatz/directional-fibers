@@ -1,11 +1,10 @@
 code:
-    tag version of code at submission
     trace logger with format strings for different step data etc
     min num_procs,num_cpus really needed/good?
     nomenclature: "fixed" -> "root"
     jim:
         experiment whether cts relaxation has same fxpts as discrete
-        very interesting ortho idea
+        very interesting ortho idea: if you try X orthogonal c, can you guarantee all roots?
         switching c mid-traverse: as more roots located, update based on their span
     multisolver
         handles oddness, closed loops, and disconnected components
