@@ -1,5 +1,5 @@
 code:
-    trace logger with format strings for different step data etc
+    let user pass logger function handle to produce arbitrary string from trace
     min num_procs,num_cpus really needed/good?
     nomenclature: "fixed" -> "root"
     jim:
