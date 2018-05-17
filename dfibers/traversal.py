@@ -8,7 +8,7 @@ import fixed_points as fx
 class FiberTrace:
     """
     A record of fiber traversal.  Has fields:
-    status: "Terminated" | "Closed loop" | "Max steps" | "Timed out" | "Diverged"
+    status: "Terminated" | "Closed loop" | "Max steps" | "Timed out" | "Critical"
     c: direction vector as N x 1 np.array
     x: current fiber point as (N+1) x 1 np.array
     DF: current fiber Jacobian as N x (N+1) np.array
@@ -136,13 +136,10 @@ def compute_tangent(DF, z=None):
     if z is not None, the sign of z_new is selected for positive dot product with z
     """
     N = DF.shape[0]
-    if z is None:
-        _,_,z_new = np.linalg.svd(DF)
-        z_new = z_new[[N],:].T
-    else:
-        DG = np.concatenate((DF,z.T), axis=0)
-        z_new = nu.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
-        z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
+    if z is None: z = np.random.randn(N+1, 1) # random initial sign for tangent
+    DG = np.concatenate((DF,z.T), axis=0)
+    z_new = nu.solve(DG, np.concatenate((np.zeros((N,1)), [[1]]), axis=0)) # Fast DF null-space
+    z_new = z_new / np.sqrt((z_new**2).sum()) # faster than linalg.norm
     return z_new
 
 def take_step(f, Df, ef, c, z, x, step_amount, max_solve_iterations):
@@ -258,7 +255,7 @@ def traverse_fiber(
 
         # Check for critical fiber
         if step_critical:
-            trace.status = "Critical point encountered"
+            trace.status = "Critical"
             break
 
         # Update x
