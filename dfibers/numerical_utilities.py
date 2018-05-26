@@ -48,7 +48,7 @@ def minimum_singular_value(A):
     min_eig = spl.eigh(A.T.dot(A), eigvals_only=True, eigvals=(0,1))[0]
     low_rank = (min_eig <= 0)
     min_sv = 0 if low_rank else np.sqrt(min_eig)
-    return np.sqrt(min_eig), low_rank
+    return min_sv, low_rank
 
 def nr_solve(x, f, Df, ef, max_iterations=None):
     """
