@@ -193,6 +193,9 @@ def run_fiber_solver(W, **kwargs):
         c = c/np.linalg.norm(c)
         kwargs["c"] = c
     
+    # Setup other parameters if not provided
+    kwargs["v"] = kwargs.get("v", np.zeros((N,1)))
+    kwargs["max_solve_iterations"] = kwargs.get("max_solve_iterations", 2**5)
     if "compute_step_amount" not in kwargs:
         kwargs["compute_step_amount"] = compute_step_amount_factory(W)
 
@@ -201,9 +204,7 @@ def run_fiber_solver(W, **kwargs):
         f = f_factory(W),
         ef = ef_factory(W),
         Df = Df_factory(W),
-        v = np.zeros((N,1)),
         terminate = terminate_factory(W, c),
-        max_solve_iterations = 2**5,
         **kwargs
     )
 
