@@ -11,8 +11,6 @@ import dfibers.fixed_points as fx
 import dfibers.traversal as tv
 import dfibers.solvers as sv
 
-
-
 def f_factory(W):
     """
     For a given weight matrix W, returns the function f,
