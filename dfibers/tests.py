@@ -1,11 +1,11 @@
 import time
 import unittest as ut
 import numpy as np
-import numerical_utilities as nu
-import traversal as tv
-import fixed_points as fx
-import solvers as sv
-import examples.rnn as rnn
+import dfibers.numerical_utilities as nu
+import dfibers.traversal as tv
+import dfibers.fixed_points as fx
+import dfibers.solvers as sv
+import dfibers.examples.rnn as rnn
 import matplotlib.pyplot as plt
 
 np.set_printoptions(linewidth=200)
@@ -243,7 +243,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             if VERBOSE: print(max_traverse_steps, len(result.points))
             self.assertTrue(len(result.points) <= max_traverse_steps+1)
         run_time = 2
-        start_time = time.clock()
+        start_time = time.perf_counter()
         result = tv.traverse_fiber(
             self.f,
             self.Df,
@@ -254,7 +254,7 @@ class RNNDirectionalFiberTestCase(ut.TestCase):
             stop_time=start_time + run_time,
             max_solve_iterations=self.max_solve_iterations,
             )
-        end_time = time.clock()
+        end_time = time.perf_counter()
         if VERBOSE: print("start, run, end")
         if VERBOSE: print(start_time, run_time, end_time)
         self.assertTrue(end_time > start_time + run_time and end_time < start_time + run_time + 1)

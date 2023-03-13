@@ -2,9 +2,9 @@ import time
 import itertools as it
 import numpy as np
 import scipy.optimize as so
-import numerical_utilities as nu
-import fixed_points as fx
-import traversal as tv
+import dfibers.numerical_utilities as nu
+import dfibers.fixed_points as fx
+import dfibers.traversal as tv
 
 def local_solver(
     sampler,
@@ -32,7 +32,7 @@ def local_solver(
             g: the gradient of the objective (a (N,) ndarray)
         H(v) returns
             H: an approximate Hessian of q at v (a (N,N) ndarray)
-    If provided, the solver terminates at the clock time stop_time.
+    If provided, the solver terminates at stop_time.
     If provided, the solver terminates after max_repeats samples.
     The solver iterates each sample under the system dynamics at most max_updates times before optimizing.
 
@@ -43,11 +43,11 @@ def local_solver(
     
     """
     seeds, updates, optima = [], [], []
-    start = time.clock()
+    start = time.perf_counter()
     for repeat in it.count():
 
         # Check termination criteria
-        if stop_time is not None and time.clock() >= stop_time: break
+        if stop_time is not None and time.perf_counter() >= stop_time: break
         if max_repeats is not None and repeat >= max_repeats: break
 
         # get random initial seed anywhere in range

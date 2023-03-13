@@ -1,5 +1,5 @@
 import numpy as np
-import numerical_utilities as nu
+import dfibers.numerical_utilities as nu
 
 def is_fixed(V, f, ef):
     """

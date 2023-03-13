@@ -1,9 +1,9 @@
 import time
 import numpy as np
-import numerical_utilities as nu
+import dfibers.numerical_utilities as nu
 import itertools as it
 import matplotlib.pyplot as plt
-import fixed_points as fx
+import dfibers.fixed_points as fx
 
 class FiberTrace:
     """
@@ -197,7 +197,7 @@ def traverse_fiber(
     
     If provided, the function terminate(trace) should return True when trace meets a custom termination criterion.
     If provided, progress is written to the Logger object logger.
-    If provided, traversal terminates at the clock time stop_time.
+    If provided, traversal terminates at stop_time.
     If provided, traversal terminates after max_traverse_steps.
     If provided, step sizes are truncated to max_step_size.
 
@@ -277,7 +277,7 @@ def traverse_fiber(
         if max_traverse_steps is not None and step + 1 >= max_traverse_steps:
             trace.status = "Max steps"
             break
-        if stop_time is not None and time.clock() >= stop_time:
+        if stop_time is not None and time.perf_counter() >= stop_time:
             trace.status = "Timed out"
             break
         # Check custom termination criteria

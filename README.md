@@ -4,23 +4,25 @@
 
 ![Directional Fiber 1](https://cloud.githubusercontent.com/assets/6537102/21059296/bc76324e-be0f-11e6-9b5f-24a3cc928711.png)
 
-More information is available in this publication:
+More information is available in these publications:
 
-[Katz, G. E., Reggia, J. A. (2017). Using Directional Fibers to Locate Fixed Points of Recurrent Neural Networks. IEEE Transactions on Neural Networks and Learning Systems (accepted). IEEE.](https://doi.org/10.1109/TNNLS.2017.2733544) (Here is a [preprint](https://www.cs.umd.edu/~gkatz/TNNLS-2016-P-7293.R2.pdf)).
+- [Katz, G. E., & Reggia, J. A. (2017). Using Directional Fibers to Locate Fixed Points of Recurrent Neural Networks. IEEE Transactions on Neural Networks and Learning Systems, 29(8), 3636-3646.](https://doi.org/10.1109/TNNLS.2017.2733544) (Here is a [preprint](https://web.ecs.syr.edu/~gkatz01/katz_tnnls2017.pdf)).
+
+- [Katz, G. E., & Reggia, J. A. (2018). Applications of Directional Fibers to Fixed Point Location and Non-convex Optimization. In Proceedings of the International Conference on Scientific Computing (CSC) (pp. 140-146). The Steering Committee of The World Congress in Computer Science, Computer Engineering and Applied Computing (WorldComp).](https://www.proquest.com/docview/2140020820)
 
 ## Requirements
 
 `directional-fibers` has been tested using the following environment, but it may work with other operating systems and versions.
-* [Fedora](https://getfedora.org/) 26
-* [Python](https://www.python.org/) 2.7.14
-* [numpy](http://www.numpy.org/) 1.14.0
-* [scipy](http://www.scipy.org/scipylib/index.html) 1.0.0
-* [matplotlib](http://matplotlib.org/) 2.0.0
+* [Ubuntu](https://ubuntu.com/#download) 22.04.2 LTS
+* [Python](https://www.python.org/) 3.10.6
+* [numpy](http://www.numpy.org/) 1.23.2
+* [scipy](http://www.scipy.org/scipylib/index.html) 1.8.1
+* [matplotlib](http://matplotlib.org/) 3.5.3
 
 ## Installation
 
 1. [Clone or download](https://help.github.com/articles/cloning-a-repository/) this repository into a directory of your choice.
-2. Add the local repository directory to your [PYTHONPATH](https://docs.python.org/2/using/cmdline.html#envvar-PYTHONPATH).
+2. Add the local repository top-level directory to your [PYTHONPATH](https://docs.python.org/3/using/cmdline.html#envvar-PYTHONPATH).
 
 ## Basic Usage
 
@@ -43,13 +45,13 @@ Next you must define a function `Df` that computes the NxN Jacobian of `f`.  Onl
 ...
 ```
 
-Next you must define a function `ef` that bounds the forward error in `f`: the difference between the true mathematical value of `f` and its finite-precision machine approximation.  A point `v` is considered fixed when `(np.fabs(f(v)) < ef(v)).all()`. `ef` is also used during directional fiber traversal to keep residual errors near machine precision.  Since `ef` essentially plays the role of a tolerance, as a simpler alternative you can have it return a constant value:
+Next you must define a function `ef` that bounds the forward error in `f`: the difference between the true mathematical value of `f` and its finite-precision machine approximation.  This library considers a point `v` fixed when `(np.fabs(f(v)) < ef(v)).all()`. `ef` is also used during directional fiber traversal to keep residual errors near machine precision.  Since `ef` plays the role of a tolerance, as a simpler alternative you can have it return a constant value:
 
 ```python
 >>> ef = lambda v: 10**-10
 ```
 
-As directional fibers are traversed, the current and past traversal data (points along the fiber, residual errors, etc.) are saved in a `FiberTrace` object:
+As directional fibers are traversed, the current and past traversal data (points along the fiber, residual errors, etc.) are saved in a `FiberTrace` object.  For details about FiberTrace do:
 
 ```python
 >>> import dfibers.traversal as tv
@@ -62,7 +64,7 @@ You can define a custom termination criterion that takes a `FiberTrace` object a
 >>> terminate = lambda trace: (np.fabs(trace.x) > 10**6).any()
 ```
 
-Alternatively there are also standard termination criteria such as maximum run time or maximum number of steps that can be specified later as keyword arguments.  In that case you can set `terminate = None`.
+Alternatively there are also standard termination criteria such as maximum run time or maximum number of steps that can be specified later as keyword arguments.  If those are sufficient for your purposes you can set `terminate = None`.
 
 Lastly, you should define a `compute_step_amount` function, which computes a reasonable step size for the current numerical step along the fiber.  This function should take a `FiberTrace` object as input, and return three outputs:
 - `step_amount`: the actual size of the step
@@ -118,3 +120,4 @@ And inspect the sanitized solution:
 ```
 
 More sophisticated examples can be found in the `directional-fibers/dfibers/examples` sub-directory.
+
