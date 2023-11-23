@@ -1,3 +1,4 @@
+import itertools as it
 import numpy as np
 import torch as tr
 import matplotlib as mp
@@ -9,6 +10,12 @@ import dfibers.fixed_points as fx
 from dfibers.logging_utilities import Logger
 
 np.set_printoptions(linewidth=1000)
+tr.set_printoptions(linewidth=1000)
+
+# helper to kron sequence of matrices
+def kron(*args):
+    if len(args) == 1: return args[0]
+    return tr.kron(args[0], kron(*args[1:]))
 
 pauli = tr.tensor([
     [[1., 0.],
@@ -24,21 +31,27 @@ pauli = tr.tensor([
      [0., -1.]],
 ])
 
-pauli_prods = []
-for a in range(4):
-    for b in range(1,4):
-        # if (a,b) in ((0,1), (0,2), (1,2)): continue
-        if (a,b) in ((0,1), (0,2), (1,1)): continue
-        print(a,b)
-        pauli_prods.append(pauli[a] @ pauli[b])
-pauli_prods = tr.stack(pauli_prods)
+# number of qubits
+n_qb = 6
 
-print(pauli_prods)
+# form all of the kroneker products
+pauli_prods = tr.zeros(9, 2**n_qb, 2**n_qb, dtype=tr.cfloat)
+p = 0
+for a, b in it.product(range(4), range(1,4)):
+    if (a,b) in ((0,1), (0,2), (1,1)): continue
+    idx = tr.tensor((a, b) + (0,)*(n_qb - 2))
+    for i in range(n_qb):
+        terms = pauli[tr.roll(idx, i)]
+        pauli_prods[p] += kron(*terms)
+    p += 1
+
+# print(pauli_prods)
+# input('.')
 
 def get_spectrum(c):
     # c is (K, 9) tensor, K is batch size
-    H = (pauli_prods[None,:,:,:] * c[:,:,None,None]).sum(dim=1) # (K, 2, 2)
-    spectrum = tr.linalg.eigvalsh(H) # (K, 2)
+    H = (pauli_prods[None,:,:,:] * c[:,:,None,None]).sum(dim=1) # (K, 2**n_qb, 2**n_qb)
+    spectrum = tr.linalg.eigvalsh(H) # (K, 2**n_qb)
     return spectrum
 
 c0 = tr.randn(1,9)
@@ -54,7 +67,6 @@ def f(v):
     c = tr.tensor(v.T, requires_grad=True) # torch wants batch first
     loss = get_loss(c)
     loss.sum().backward()
-    print(c.grad.numpy())
     return c.grad.numpy().T
 
 def Df(v):
@@ -65,33 +77,29 @@ def Df(v):
         c = tr.tensor(v[:,k:k+1].T)
         Dfv.append(hess_fun(c).squeeze()) # squeeze singleton batch dimensions
     Dfv = tr.stack(Dfv)
-    print(tr.linalg.matrix_rank(Dfv))
     return Dfv.numpy()
 
-def ef(v): return 0.001
+def ef(v): return 1e-9
 
 if __name__ == "__main__":
 
     mp.rcParams['font.family'] = 'serif'
     mp.rcParams['text.usetex'] = True
 
-    # get initial point and fiber
-    v = c0.numpy().T
-    
-    # initial v is solution and f(v) = 0 there, so use default choice for constant direction vector (random)
-    c = None # constant direction, not hamiltonian coefficients
+    # get initial point
+    v0 = c0.numpy().T
     
     # Set up fiber arguments
     fiber_kwargs = {
         "f": f,
         "ef": ef,
         "Df": Df,
-        "compute_step_amount": lambda trace: (0.001, 0, False),
-        "v": v,
-        "c": c,
-        "terminate": lambda trace: (np.fabs(trace.x[:2,:]) > np.pi).any(),
+        "compute_step_amount": lambda trace: (0.1, 0, False),
+        "v": v0,
+        "c": None, # f(v0) = 0, so use default random choice of direction vector
+        "terminate": None,
         "max_step_size": 1,
-        "max_traverse_steps": 10000,
+        "max_traverse_steps": 50,#000,
         "max_solve_iterations": 2**5,
         # "logger": logger,
     }
@@ -103,6 +111,7 @@ if __name__ == "__main__":
     A1 = X1[-1,:]
     R1 = solution["Fixed points"]
     z = solution["Fiber trace"].z_initial
+    print(len(A1))
     
     # Run in other direction (negate initial tangent)
     fiber_kwargs["z"] = -z
@@ -111,6 +120,7 @@ if __name__ == "__main__":
     V2 = X2[:-1,:]
     A2 = X2[-1,:]
     R2 = solution["Fixed points"]
+    print(len(A2))
     
     # Join fiber segments and roots
     V = np.concatenate((np.fliplr(V1), V2), axis=1)
@@ -118,13 +128,21 @@ if __name__ == "__main__":
     R = np.concatenate((R1, R2), axis=1)    
     C = f(V)
 
-    duplicates = lambda U, v: (np.fabs(U - v) < 0.1).all(axis=0)
-    R = fx.get_unique_points(R, duplicates)
+    # duplicates = lambda U, v: (np.fabs(U - v) < 0.1).all(axis=0)
+    # R = fx.get_unique_points(R, duplicates)
 
-    # remove spurious points
-    elbow, effector = fk(R)
-    R = R[:, np.fabs(effector - target).max(axis=0) < 0.01]
+    R, fixed = fx.refine_points(R, f, ef, Df)
+    R = R[:, fixed]
     print(f"{R.shape[1]} roots")
+
+    print(np.fabs(f(R)).max(axis=0))
+    print(R)
+
+    loss = get_loss(tr.tensor(R.T))
+    print(f"loss = {loss}")
+
+    pt.plot(A)
+    pt.show()
 
     # pt.figure(figsize=(6.5, 3))
 
