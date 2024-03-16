@@ -99,13 +99,13 @@ if __name__ == "__main__":
     mp.rcParams['font.family'] = 'serif'
     mp.rcParams['text.usetex'] = True
 
-    do_fiber = True
+    do_fiber = False
 
     if do_fiber:
 
         # random sample for target spectrum
         # c_targ = tr.randn(1,9)
-        c_targ = tr.tensor([-.5, -.15, 1.1, .33, .75, .3, .3, -.8, -.75]) # two optima
+        c_targ = tr.tensor([[-.5, -.15, 1.1, .33, .75, .3, .3, -.8, -.75]]) # two optima
         get_loss = get_loss_factory(c_targ)
         f = f_factory(get_loss)
         Df = Df_factory(get_loss)
@@ -113,17 +113,23 @@ if __name__ == "__main__":
         # get initial fiber point
         v0 = c_targ.numpy().T
 
+        # # f(v0) = 0, so use default random choice of direction vector
+        # c_dir = None
+
+        # constant direction that finds two optima
+        c_dir = np.array([[-0.08657043, 0.10342339, 0.22536035, 0.39073649, 0.01098348,-0.44329002, 0.1645999,-0.08833236,-0.21927355]]).T
+
         # Set up fiber arguments
         fiber_kwargs = {
             "f": f,
             "Df": Df,
             "ef": ef,
-            "compute_step_amount": lambda trace: (0.0005, 0, False),
+            "compute_step_amount": lambda trace: (0.0001, 0, False),
             "v": v0,
-            "c": None, # f(v0) = 0, so use default random choice of direction vector
-            "terminate": None,
+            "c": c_dir,
+            "terminate": lambda trace: (get_loss(trace.x[:9].T) > 0.001).any(),
             "max_step_size": 1,
-            "max_traverse_steps": 2000,#000,
+            "max_traverse_steps": 5000,#000,
             "max_solve_iterations": 2**5,
             "logger": Logger(sys.stdout),
         }
@@ -189,23 +195,27 @@ if __name__ == "__main__":
     print(R)
 
     trace_loss = get_loss(tr.tensor(V.T))
+    local_min = np.flatnonzero((trace_loss[1:-1] <= trace_loss[2:]) & (trace_loss[1:-1] <= trace_loss[:-2]))
 
-    pt.plot(A)
-    pt.show()
+    # pt.plot(A)
+    # pt.show()
 
-    pt.figure(figsize=(10,4))
+    pt.figure(figsize=(6,2))
 
     pt.subplot(1,2,1)
-    pt.plot(R)
-    pt.xlabel("$ab$")
-    pt.ylabel("$c_{ab}$")
+    pt.plot(R[:,0], 'b-')
+    pt.plot(R[:,1], 'r-')
+    pt.xlabel("Coefficient index")
+    pt.ylabel("Coefficient value")
 
     pt.subplot(1,2,2)
     # pt.plot(diffs.numpy().T)
     # pt.xlabel("$i$")
     # pt.ylabel("$\\lambda_i - \\lambda^*_i$")
 
-    pt.plot(trace_loss)
+    pt.plot(trace_loss, 'k-')
+    pt.plot(local_min[0], 0, 'bo')
+    pt.plot(local_min[1], 0, 'ro')
     pt.ylabel("$||\\Lambda - \\Lambda_0||^2$")
     pt.xlabel("Step along fiber")
 
