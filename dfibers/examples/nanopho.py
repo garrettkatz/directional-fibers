@@ -75,9 +75,17 @@ if __name__ == "__main__":
         "max_solve_iterations": 2**5,
     }
 
+    fig, axes = pt.subplot_mosaic("AB",
+         per_subplot_kw={('A',): {'projection': '3d'}},
+         gridspec_kw={'width_ratios': [1.25, 1]},
+         # figsize=(5.5, 3))
+         figsize=(7, 3))
+
+    # fig = pt.figure(figsize=(5.75,3))
+
     # plot fiber
-    fig = pt.figure()
-    ax = fig.add_subplot(121, projection='3d')
+    ax = axes["A"]
+    ax.view_init(elev=20, azim=-105)
 
     # Run in one direction
     solution = sv.fiber_solver(**fiber_kwargs)
@@ -126,7 +134,9 @@ if __name__ == "__main__":
 
 
     # visualize optimization problem
-    pt.subplot(1,2,2)
+    # pt.subplot(1,2,2)
+
+    ax = axes["B"]
 
     y0 = xi / a**2
     xlims = [-12, 5]
@@ -138,18 +148,22 @@ if __name__ == "__main__":
     X, Y = np.meshgrid(xs, ys)
     Z = X * (a**2 * Y - xi)
     CS = pt.contour(X, Y, Z, levels=10)
-    pt.gca().clabel(CS, inline=True, fontsize=10)
+    ax.clabel(CS, inline=True, fontsize=10)
 
-    pt.plot([x0, x0], ylims, 'k--')
+    ax.plot([x0, x0], ylims, 'k--')
     # pt.plot(xlims, [y0, y0], 'k-.')
 
-    pt.plot(*V[:2], color='black', linestyle='-')
-    pt.plot(*roots[:2], marker='o', color='k', linestyle='none')
+    ax.plot(*V[:2], color='black', linestyle='-')
+    ax.plot(*roots[:2], marker='o', color='k', linestyle='none')
 
-    pt.xlim(xlims)
-    pt.ylim(ylims)
-    pt.xlabel("x")
-    pt.ylabel("y")
+    ax.set_xlim(xlims)
+    ax.set_ylim(ylims)
+    ax.set_xlabel("x")
+    ax.set_ylabel("y", rotation=0)
 
-    pt.tight_layout()
+    pos = ax.get_position()
+    pos = [pos.x0, pos.y0 + pos.height*.1, pos.width, pos.height*.9]
+    ax.set_position(pos)
+
+    # pt.tight_layout()
     pt.show()

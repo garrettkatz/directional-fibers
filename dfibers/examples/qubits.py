@@ -99,12 +99,13 @@ if __name__ == "__main__":
     mp.rcParams['font.family'] = 'serif'
     mp.rcParams['text.usetex'] = True
 
-    do_fiber = False
+    do_fiber = True
 
     if do_fiber:
 
         # random sample for target spectrum
-        c_targ = tr.randn(1,9)
+        # c_targ = tr.randn(1,9)
+        c_targ = tr.tensor([-.5, -.15, 1.1, .33, .75, .3, .3, -.8, -.75]) # two optima
         get_loss = get_loss_factory(c_targ)
         f = f_factory(get_loss)
         Df = Df_factory(get_loss)
