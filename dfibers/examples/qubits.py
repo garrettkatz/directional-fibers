@@ -149,7 +149,6 @@ if __name__ == "__main__":
         V = np.concatenate((np.fliplr(V1), V2), axis=1)
         A = np.concatenate((A1[::-1], A2), axis=0)
         R = np.concatenate((R1, R2), axis=1)
-        C = f(V)
 
         R, fixed = fx.refine_points(R, f, ef, Df)
         R = R[:, fixed]
@@ -163,6 +162,10 @@ if __name__ == "__main__":
 
     get_loss = get_loss_factory(c_targ)
     f = f_factory(get_loss)
+
+    C = f(V)
+    print("constant direction vectors:")
+    print(C[:,:3])
 
     # # filter duplicates
     # duplicates = lambda U, v: (np.fabs(U - v) < 1e-3).all(axis=0)
@@ -184,6 +187,8 @@ if __name__ == "__main__":
     print("f(R)", np.fabs(f(R)).max(axis=0))
     print(R)
 
+    trace_loss = get_loss(tr.tensor(V.T))
+
     pt.plot(A)
     pt.show()
 
@@ -195,41 +200,14 @@ if __name__ == "__main__":
     pt.ylabel("$c_{ab}$")
 
     pt.subplot(1,2,2)
-    pt.plot(diffs.numpy().T)
-    pt.xlabel("$i$")
-    pt.ylabel("$\\lambda_i - \\lambda^*_i$")
+    # pt.plot(diffs.numpy().T)
+    # pt.xlabel("$i$")
+    # pt.ylabel("$\\lambda_i - \\lambda^*_i$")
+
+    pt.plot(trace_loss)
+    pt.ylabel("$||\\Lambda - \\Lambda_0||^2$")
+    pt.xlabel("Step along fiber")
 
     pt.tight_layout()
     pt.show()
-
-    # pt.figure(figsize=(6.5, 3))
-
-    # ax = pt.subplot(1,2,1,projection="3d")
-    # pt.plot(*V, linestyle='-', color='k')
-    # pt.quiver(*np.concatenate((V[:,::100],.1*C[:,::100]),axis=0),color='black')
-    # pt.plot(*R, linestyle='none', marker='o', color='k')
-    # ax.set_title("Directional Fiber")
-    # ax.set_xlabel("$\\theta_0$", rotation=0)
-    # ax.set_ylabel("$\\theta_1$", rotation=0)
-    # ax.set_zlabel("$\\theta_2$", rotation=0)
-
-    # ax = pt.subplot(1,2,2,projection="3d")
-    # for j in range(0, V.shape[1], 500):
-    #     elbow, effector = fk(V[:,j:j+1])
-    #     pt.plot(*np.concatenate((np.zeros((3,1)), elbow, effector), axis=1), linestyle='-', color=(.75,)*3)
-    # for r in range(R.shape[1]):
-    #     elbow, effector = fk(R[:,r:r+1])
-    #     pt.plot(*np.concatenate((np.zeros((3,1)), elbow, effector), axis=1), linestyle='-', color='k')
-    # pt.plot(*target, marker='o', color='k')
-    # ax.set_title("Forward Kinematics")
-    # ax.set_xlabel("$x$", rotation=0)
-    # ax.set_ylabel("$y$", rotation=0)
-    # ax.set_zlabel("$z$", rotation=0)
-
-    # pt.tight_layout()
-    # pt.savefig("qubits.eps")
-    # pt.show()
-
-
-
 
