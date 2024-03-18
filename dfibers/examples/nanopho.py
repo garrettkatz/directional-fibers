@@ -22,6 +22,11 @@ import dfibers.numerical_utilities as nu
 import dfibers.fixed_points as fx
 import dfibers.solvers as sv
 from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import rcParams
+
+rcParams["font.size"] = 14
+rcParams["font.family"] = "serif"
+rcParams['text.usetex'] = True
 
 N = 3
 
@@ -78,8 +83,8 @@ if __name__ == "__main__":
     fig, axes = pt.subplot_mosaic("AB",
          per_subplot_kw={('A',): {'projection': '3d'}},
          gridspec_kw={'width_ratios': [1.25, 1]},
-         # figsize=(5.5, 3))
-         figsize=(7, 3))
+         figsize=(5.5, 3))
+         # figsize=(7, 3))
 
     # fig = pt.figure(figsize=(5.75,3))
 
@@ -126,10 +131,14 @@ if __name__ == "__main__":
     ax.quiver(*np.concatenate((V,.1*C),axis=0),color='black')
     ax.plot(*roots, marker='o', color='k', linestyle='none')
 
+    # ax.set_xticks([],[])
+    # ax.set_yticks([],[])
+    # ax.set_zticks([],[])
+
     ax.set_xlabel("x")
     ax.set_ylabel("y")
     ax.zaxis.set_rotate_label(False)
-    ax.set_zlabel("$\lambda$", rotation=0)
+    ax.set_zlabel("$\\lambda$", rotation=0)
     # ax.view_init(elev=15,azim=145)
 
 
@@ -165,5 +174,6 @@ if __name__ == "__main__":
     pos = [pos.x0, pos.y0 + pos.height*.1, pos.width, pos.height*.9]
     ax.set_position(pos)
 
+    fig.suptitle("SA3")
     # pt.tight_layout()
     pt.show()

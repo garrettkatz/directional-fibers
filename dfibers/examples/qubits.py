@@ -200,15 +200,9 @@ if __name__ == "__main__":
     # pt.plot(A)
     # pt.show()
 
-    pt.figure(figsize=(6,2))
+    fig = pt.figure(figsize=(4,2))
 
     pt.subplot(1,2,1)
-    pt.plot(R[:,0], 'b-')
-    pt.plot(R[:,1], 'r-')
-    pt.xlabel("Coefficient index")
-    pt.ylabel("Coefficient value")
-
-    pt.subplot(1,2,2)
     # pt.plot(diffs.numpy().T)
     # pt.xlabel("$i$")
     # pt.ylabel("$\\lambda_i - \\lambda^*_i$")
@@ -219,6 +213,14 @@ if __name__ == "__main__":
     pt.ylabel("$||\\Lambda - \\Lambda_0||^2$")
     pt.xlabel("Step along fiber")
 
+    pt.subplot(1,2,2)
+    pt.plot(R[:,0], 'b-')
+    pt.plot(R[:,1], 'r-')
+    pt.xlabel("Coefficient index")
+    pt.ylabel("Coefficient value")
+    pt.ylim([-1.1, 1.1])
+
+    fig.suptitle("SA2")
     pt.tight_layout()
     pt.show()
 
