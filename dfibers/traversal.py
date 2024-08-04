@@ -308,6 +308,7 @@ def plot_fiber(X, Y, V, f, ax=None, scale_XY=1, scale_V=1, fiber_color='k'):
     V: (2,P) ndarray of P points along the fiber
     f: as in traverse_fiber
     ax: axis on which to draw
+    scale_XY, scale_V: passed to scale kwarg of matplotlib quiver for respective points
     """
 
     # Calculate direction vectors
