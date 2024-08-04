@@ -89,5 +89,6 @@ plt.scatter(*fxpts, color='k', marker='o')
 plt.xlabel("v1")
 plt.ylabel("v2",rotation=0)
 plt.tight_layout()
+plt.savefig("rnn_softplus.png")
 plt.show()
 
