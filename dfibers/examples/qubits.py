@@ -220,7 +220,7 @@ if __name__ == "__main__":
     pt.ylabel("Coefficient value")
     pt.ylim([-1.1, 1.1])
 
-    fig.suptitle("SA2")
+    # fig.suptitle("SA2")
     pt.tight_layout()
     pt.show()
 

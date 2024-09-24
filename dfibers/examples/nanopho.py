@@ -174,6 +174,6 @@ if __name__ == "__main__":
     pos = [pos.x0, pos.y0 + pos.height*.1, pos.width, pos.height*.9]
     ax.set_position(pos)
 
-    fig.suptitle("SA3")
+    # fig.suptitle("SA3")
     # pt.tight_layout()
     pt.show()
