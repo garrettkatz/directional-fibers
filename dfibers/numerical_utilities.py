@@ -28,6 +28,8 @@ def solve(A, B):
     Assumes A is invertible.
     If A is a KxNxN stack of matrices, B should be KxN.
     """
+    return np.linalg.solve(A, B)
+    # this broke in recent numpy
     signature = 'dd->d'
     extobj = np.linalg.linalg.get_linalg_error_extobj(
         np.linalg.linalg._raise_linalgerror_singular)
