@@ -12,13 +12,13 @@ def eps(x):
 
 def mldivide(A, B):
     """
-    Returns x, where x solves Ax = B. (A\B in MATLAB)
+    Returns x, where x solves Ax = B
     """
     return np.linalg.lstsq(A,B,rcond=None)[0]
 
 def mrdivide(B,A):
     """
-    Returns x, where x solves B = xA. (B/A in MATLAB)
+    Returns x, where x solves B = xA
     """
     return np.linalg.lstsq(A.T, B.T,rcond=None)[0].T
 

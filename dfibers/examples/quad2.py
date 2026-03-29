@@ -45,6 +45,14 @@ def ef(v):
     """
     return 0.001*np.ones(v.shape) # placeholder
 
+def plot_conic_sections(M, X, Y):
+    # use countour with X, Y as meshgrid (based on https://mmas.github.io/conics-matplotlib)
+    f = f_factory(M)
+    V = np.stack([X.flatten(), Y.flatten()])
+    F = f(V)
+    pt.contour(X, Y, F[0].reshape(X.shape), levels=[0], colors='blue')
+    pt.contour(X, Y, F[1].reshape(X.shape), levels=[0], colors='red')
+
 if __name__ == "__main__":
 
     # random quadric
@@ -54,7 +62,8 @@ if __name__ == "__main__":
 
     # Set up fiber arguments
     # v = np.array([[-.5],[-1.5]])
-    v = np.ones((2,1))
+    # v = np.ones((2,1))
+    v = np.random.randn(2,1)
     c = f(v)
     # v = None
     # c = np.array([[1],[.25]])
@@ -67,7 +76,7 @@ if __name__ == "__main__":
         "c": c,
         "terminate": lambda trace: (np.fabs(trace.x[:2,:]) > 10).any(),
         "max_step_size": 1,
-        "max_traverse_steps": 500,
+        "max_traverse_steps": 1000,
         "max_solve_iterations": 2**5,
     }
 
@@ -87,13 +96,15 @@ if __name__ == "__main__":
     V = V[:,(np.fabs(V) < 3).all(axis=0)]
 
     # Grids for fiber and attractor
-    X_fiber, Y_fiber = np.mgrid[-2:2:20j, -2:2:20j]
-    X_a, Y_a = np.mgrid[-1:1:100j, -1:1:100j]  
+    X_fiber, Y_fiber = np.mgrid[-5:5:40j, -5:5:40j]
 
     # Visualize fiber and attractor
     pt.figure(figsize=(3.5,3.5))
     ax_fiber = pt.gca()
     tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=10, scale_V=10)
+
+    plot_conic_sections(M, X_fiber, Y_fiber)
+
     ax_fiber.set_xlabel("x")
     ax_fiber.set_ylabel("y",rotation=0)
     pt.yticks(np.linspace(-2,2,5))
