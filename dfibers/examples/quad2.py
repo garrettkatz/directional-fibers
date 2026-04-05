@@ -16,6 +16,7 @@ def f_factory(M):
     For a given 2x6 coefficient matrix M, returns the function f,
     where f(V)[:,p] = f(V[:,p])
     """
+    M = M.copy() # save in closure in case modified later
     def f(V):
         x, y = V
         Q = np.stack([np.ones(len(x)), x, y, x*y, x**2, y**2])
@@ -53,6 +54,55 @@ def plot_conic_sections(M, X, Y):
     pt.contour(X, Y, F[0].reshape(X.shape), levels=[0], colors='blue')
     pt.contour(X, Y, F[1].reshape(X.shape), levels=[0], colors='red')
 
+def reference_roots(M):
+    """
+    For a given 2x6 coefficient matrix M, return the real roots of the system
+    Eliminates y to get quartic in x
+    """
+
+    # save function for check before modifying M
+    f = f_factory(M)
+
+    # [TODO] special case: y^2 coefficients zero (not a major concern when M sampled randomly)
+    if 0 in M[:,-1]:
+        raise NotImplementedError
+
+    # divide through y^2 coefficients
+    M = M / M[:,-1:]
+
+    # cancel y^2 terms
+    M[0] = M[0] - M[1]
+
+    # numerically solve quartic in x
+    coefs = np.array([
+        M[0,4]**2 - M[1,3]*M[0,3]*M[0,4] + M[0,3]**2*M[1,4],
+        2*M[0,1]*M[0,4] - M[1,2]*M[0,3]*M[0,4] - M[1,3]*M[0,2]*M[0,4] - M[1,3]*M[0,3]*M[0,1] + 2*M[0,2]*M[0,3]*M[1,4] + M[0,3]**2*M[1,1],
+        M[0,1]**2 + 2*M[0,0]*M[0,4] - M[1,2]*M[0,2]*M[0,4] - M[1,2]*M[0,3]*M[0,1] - M[1,3]*M[0,2]*M[0,1] - M[1,3]*M[0,3]*M[0,0] + M[0,2]**2*M[1,4] + 2*M[0,2]*M[0,3]*M[1,1] + M[0,3]**2*M[1,0],
+        2*M[0,0]*M[0,1] - M[1,2]*M[0,2]*M[0,1] - M[1,2]*M[0,3]*M[0,0] - M[1,3]*M[0,2]*M[0,0] + M[0,2]**2*M[1,1] + 2*M[0,2]*M[0,3]*M[1,0],
+        M[0,0]**2 - M[1,2]*M[0,2]*M[0,0] + M[0,2]**2*M[1,0],
+    ])
+    x = np.roots(coefs)
+
+    # filter imaginary solutions
+    real = np.fabs(np.imag(x)) < 1e-7
+    if not real.any(): return [], []
+    x = x[real].real
+
+    # recover y
+    y = -(M[0,0] + M[0,1]*x + M[0,4]*x**2) / (M[0,2] + M[0,3]*x)
+
+    # checks
+    powers = np.stack([x**4, x**3, x**2, x**1, x**0])
+    resid = (coefs @ powers)
+    assert (np.fabs(resid) < 1e-7).all()
+
+    V = np.stack([x,y])
+    fV = f(V)
+    assert (np.fabs(fV) < 1e-7).all()
+
+    return x, y
+    
+
 if __name__ == "__main__":
 
     # random quadric
@@ -76,7 +126,7 @@ if __name__ == "__main__":
         "c": c,
         "terminate": lambda trace: (np.fabs(trace.x[:2,:]) > 10).any(),
         "max_step_size": 1,
-        "max_traverse_steps": 1000,
+        "max_traverse_steps": 5000,
         "max_solve_iterations": 2**5,
     }
 
@@ -95,19 +145,33 @@ if __name__ == "__main__":
     V = V[:,np.isfinite(V).all(axis=0)]
     V = V[:,(np.fabs(V) < 3).all(axis=0)]
 
-    # Grids for fiber and attractor
-    X_fiber, Y_fiber = np.mgrid[-5:5:40j, -5:5:40j]
+    # Get ground truth roots for validation
+    xr, yr = reference_roots(M)    
 
-    # Visualize fiber and attractor
+    # Grid extents
+    xlo, xhi = V[0].min(), V[0].max()
+    ylo, yhi = V[1].min(), V[1].max()
+    if len(xr) > 0:
+        xlo = min(xlo, xr.min())
+        xhi = max(xhi, xr.max())
+        ylo = min(ylo, yr.min())
+        yhi = max(yhi, yr.max())
+
+    # Grids for fiber and attractor
+    X_fiber, Y_fiber = np.mgrid[xlo-1:xhi+1:50j, ylo-1:yhi+1:50j]
+
+    # Visualize fiber, conic sections, and roots
     pt.figure(figsize=(3.5,3.5))
+
     ax_fiber = pt.gca()
     tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=10, scale_V=10)
 
     plot_conic_sections(M, X_fiber, Y_fiber)
+    pt.plot(xr, yr, 'go')
 
     ax_fiber.set_xlabel("x")
     ax_fiber.set_ylabel("y",rotation=0)
-    pt.yticks(np.linspace(-2,2,5))
+    # pt.yticks(np.linspace(-2,2,5))
     pt.tight_layout()
     pt.show()
 
