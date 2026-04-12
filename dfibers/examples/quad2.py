@@ -110,6 +110,10 @@ if __name__ == "__main__":
     f = f_factory(M)
     Df = Df_factory(M)
 
+    # Lipschitz constant
+    mu = 2 * np.linalg.norm(M[:,3:], ord=2)
+    print(f"{mu=}")
+
     # Set up fiber arguments
     # v = np.array([[-.5],[-1.5]])
     # v = np.ones((2,1))
@@ -121,12 +125,13 @@ if __name__ == "__main__":
         "f": f,
         "ef": ef,
         "Df": Df,
-        "compute_step_amount": lambda trace: (0.01, 0, False),
+        # "compute_step_amount": lambda trace: (0.01, 0, False),
+        "compute_step_amount": tv.compute_lipschitz_step_amount_factory(mu),
         "v": v,
         "c": c,
         "terminate": lambda trace: (np.fabs(trace.x[:2,:]) > 10).any(),
         "max_step_size": 1,
-        "max_traverse_steps": 5000,
+        "max_traverse_steps": 10000,
         "max_solve_iterations": 2**5,
     }
 
@@ -164,7 +169,9 @@ if __name__ == "__main__":
     pt.figure(figsize=(3.5,3.5))
 
     ax_fiber = pt.gca()
-    tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=10, scale_V=10)
+    # tv.plot_fiber(X_fiber, Y_fiber, V[:,::10], f, ax=ax_fiber, scale_XY=10, scale_V=10)
+    tv.plot_fiber(X_fiber, Y_fiber, V, f, ax=ax_fiber, scale_XY=10, scale_V=10)
+    pt.plot(V2[0,0], V2[1,0], 'ro')
 
     plot_conic_sections(M, X_fiber, Y_fiber)
     pt.plot(xr, yr, 'go')

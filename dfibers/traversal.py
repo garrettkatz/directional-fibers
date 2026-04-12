@@ -73,6 +73,36 @@ class FiberTrace:
         self.sign_changes = self.sign_changes[keep]
         self.alpha_mins = self.alpha_mins[keep]
 
+def compute_lipschitz_step_amount_factory(mu):
+    """
+    Build a compute_step_amount function for traversal given Lipschitz continuity.
+    Only has formal traversal guarantees if f satisfies:
+        ||Df(a)-Df(b)|| < mu ||a-b||
+    for some mu, where ||.|| is the vector or induced matrix 2-norm.
+    returns compute_step_amount, a step function suitable for traverse.
+        The function signature is compute_step_amount(trace),
+        where trace includes fields DF, and z:
+            DF is the derivative of F(x), and z is the fiber tangent.
+        the first return value is the step amount
+        the second return value is the minimum singular value of Dg at x
+        the third return value is True only if x is a critical point
+    """
+    def compute_step_amount(trace):
+
+        # lambda
+        Dg = np.concatenate((trace.DF, trace.z.T), axis=0)
+        sv_min, low_rank = nu.minimum_singular_value(Dg)
+        step_amount = 0
+
+        if not low_rank:
+
+            N = trace.x.shape[0]-1
+            step_amount = sv_min / (4 * mu * N**.5)
+
+        return step_amount, sv_min, low_rank
+
+    return compute_step_amount
+
 def compute_step_amount_factory(f2, f3):
     """
     Build a compute_step_amount function for traversal.
